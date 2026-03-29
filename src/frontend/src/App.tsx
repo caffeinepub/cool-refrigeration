@@ -86,14 +86,11 @@ function Header() {
           className="flex items-center gap-2 group"
           data-ocid="header.link"
         >
-          <Snowflake className="w-7 h-7 text-primary" />
-          <span
-            className="font-bold text-lg tracking-tight"
-            style={{ color: "oklch(0.2 0.01 270)" }}
-          >
-            Cool{" "}
-            <span style={{ color: "oklch(0.55 0.12 230)" }}>Refrigeration</span>
-          </span>
+          <img
+            src="/assets/uploads/screenshot_20250326_050441_contacts-019d3b0c-4668-7165-b8d6-ba06ce98f43d-1.jpg"
+            alt="Cool Refrigeration Logo"
+            className="h-10 w-auto object-contain"
+          />
         </button>
 
         {/* Desktop nav */}
@@ -1227,13 +1224,11 @@ function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <Snowflake
-                className="w-6 h-6"
-                style={{ color: "oklch(0.75 0.1 220)" }}
+              <img
+                src="/assets/uploads/screenshot_20250326_050441_contacts-019d3b0c-4668-7165-b8d6-ba06ce98f43d-1.jpg"
+                alt="Cool Refrigeration Logo"
+                className="h-8 w-auto object-contain"
               />
-              <span className="font-bold text-base text-white tracking-tight">
-                Cool Refrigeration
-              </span>
             </div>
             <p className="text-sm leading-relaxed text-gray-400 mb-5">
               Kolkata's trusted AC installation, AC service &amp; fridge repair
