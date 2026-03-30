@@ -89,10 +89,112 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface backendInterface {
+export type Time = bigint;
+export interface Order {
+    id: bigint;
+    preferred_date: string;
+    service_type: string;
+    name: string;
+    email: string;
+    product_interest: string;
+    address: string;
+    notes: string;
+    timestamp: Time;
+    phone: string;
 }
+export interface Review {
+    id: bigint;
+    name: string;
+    stars: bigint;
+    message: string;
+    timestamp: Time;
+}
+export interface backendInterface {
+    getAllOrders(password: string): Promise<Array<Order> | null>;
+    getAllReviews(password: string): Promise<Array<Review> | null>;
+    submitOrder(name: string, phone: string, email: string, service_type: string, product_interest: string, address: string, preferred_date: string, notes: string): Promise<boolean>;
+    submitReview(name: string, stars: bigint, message: string): Promise<boolean>;
+    verifyAdmin(password: string): Promise<boolean>;
+}
+import type { Order as _Order, Review as _Review } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
+    async getAllOrders(arg0: string): Promise<Array<Order> | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllOrders(arg0);
+                return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllOrders(arg0);
+            return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getAllReviews(arg0: string): Promise<Array<Review> | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllReviews(arg0);
+                return from_candid_opt_n2(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllReviews(arg0);
+            return from_candid_opt_n2(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async submitOrder(arg0: string, arg1: string, arg2: string, arg3: string, arg4: string, arg5: string, arg6: string, arg7: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.submitOrder(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.submitOrder(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+            return result;
+        }
+    }
+    async submitReview(arg0: string, arg1: bigint, arg2: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.submitReview(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.submitReview(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async verifyAdmin(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.verifyAdmin(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.verifyAdmin(arg0);
+            return result;
+        }
+    }
+}
+function from_candid_opt_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [Array<_Order>]): Array<Order> | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [Array<_Review>]): Array<Review> | null {
+    return value.length === 0 ? null : value[0];
 }
 export interface CreateActorOptions {
     agent?: Agent;

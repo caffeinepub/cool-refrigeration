@@ -10,7 +10,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Toaster } from "@/components/ui/sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useActor } from "@/hooks/useActor";
 import {
   Banknote,
   CheckCircle,
@@ -37,10 +47,29 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { Lock, Shield } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
+// ─── Security Utilities ────────────────────────────────────────────────────────
+function sanitizeInput(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
+function checkRateLimit(key: string, limitMs = 60000): boolean {
+  const storageKey = `rl_${key}`;
+  const last = localStorage.getItem(storageKey);
+  if (last && Date.now() - Number.parseInt(last) < limitMs) return false;
+  localStorage.setItem(storageKey, Date.now().toString());
+  return true;
+}
 
 // ─── Cart Context ──────────────────────────────────────────────────────────────
 interface CartItem {
@@ -1197,31 +1226,54 @@ const SAMPLE_REVIEWS: Review[] = [
 const STAR_KEYS_REVIEW = [1, 2, 3, 4, 5];
 
 function CustomerReviews() {
+  const { actor } = useActor();
   const [reviews, setReviews] = useState<Review[]>(SAMPLE_REVIEWS);
   const [form, setForm] = useState({ name: "", rating: 5, message: "" });
+  const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Bot honeypot check — if filled, silently pretend success
+    if (honeypot) {
+      setForm({ name: "", rating: 5, message: "" });
+      setHoneypot("");
+      toast.success("Thank you for your review!");
+      return;
+    }
+    // Rate limit check
+    if (!checkRateLimit("review_submit")) {
+      toast.error("Please wait a moment before submitting again.");
+      return;
+    }
     if (!form.name.trim() || !form.message.trim()) return;
+    const safeName = sanitizeInput(form.name.trim());
+    const safeMessage = sanitizeInput(form.message.trim());
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 600));
     const now = new Date();
     const date = now.toLocaleString("en-US", {
       month: "long",
       year: "numeric",
     });
+    try {
+      if (actor) {
+        await actor.submitReview(safeName, BigInt(form.rating), safeMessage);
+      }
+    } catch {
+      // Backend error is non-fatal; still show review locally
+    }
     setReviews((prev) => [
       {
         id: Date.now(),
-        name: form.name,
+        name: safeName,
         rating: form.rating,
-        message: form.message,
+        message: safeMessage,
         date,
       },
       ...prev,
     ]);
     setForm({ name: "", rating: 5, message: "" });
+    setHoneypot("");
     setSubmitting(false);
     toast.success("Thank you for your review!");
   };
@@ -1353,6 +1405,17 @@ function CustomerReviews() {
                 data-ocid="reviews.textarea"
               />
             </div>
+            {/* Honeypot field - hidden from real users, catches bots */}
+            <input
+              type="text"
+              name="website"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              aria-hidden="true"
+              style={{ display: "none" }}
+              autoComplete="off"
+            />
             <Button
               type="submit"
               disabled={submitting}
@@ -1446,7 +1509,9 @@ const ORDER_FORM_INIT = {
 };
 
 function OrderSection() {
+  const { actor } = useActor();
   const [form, setForm] = useState(ORDER_FORM_INIT);
+  const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const set = (key: keyof typeof ORDER_FORM_INIT) => (val: string) =>
@@ -1454,21 +1519,57 @@ function OrderSection() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Bot honeypot check
+    if (honeypot) {
+      setForm(ORDER_FORM_INIT);
+      setHoneypot("");
+      toast.success("Order placed! WhatsApp opened to notify the business.");
+      return;
+    }
+    // Rate limit check
+    if (!checkRateLimit("order_submit")) {
+      toast.error("Please wait a moment before submitting again.");
+      return;
+    }
     setSubmitting(true);
     await new Promise((r) => setTimeout(r, 900));
     setSubmitting(false);
 
+    const safeName = sanitizeInput(form.name.trim());
+    const safePhone = sanitizeInput(form.phone.trim());
+    const safeEmail = sanitizeInput(form.email.trim());
+    const safeAddress = sanitizeInput(form.address.trim());
+    const safeNotes = sanitizeInput(form.notes.trim());
+
+    // Log order to backend
+    try {
+      if (actor) {
+        await actor.submitOrder(
+          safeName,
+          safePhone,
+          safeEmail,
+          form.serviceType,
+          form.productInterest,
+          safeAddress,
+          form.preferredDate,
+          safeNotes,
+        );
+      }
+    } catch {
+      // Backend logging is non-fatal
+    }
+
     const msg = [
       "🛒 *New Order - Cool Refrigeration*",
       "",
-      `*Name:* ${form.name}`,
-      `*Phone:* ${form.phone}`,
-      `*Email:* ${form.email}`,
+      `*Name:* ${safeName}`,
+      `*Phone:* ${safePhone}`,
+      `*Email:* ${safeEmail}`,
       `*Service:* ${form.serviceType}`,
       `*Product Interest:* ${form.productInterest}`,
-      `*Address:* ${form.address}`,
+      `*Address:* ${safeAddress}`,
       `*Preferred Date:* ${form.preferredDate}`,
-      form.notes ? `*Notes:* ${form.notes}` : "",
+      safeNotes ? `*Notes:* ${safeNotes}` : "",
     ]
       .filter(Boolean)
       .join("\n");
@@ -1483,6 +1584,7 @@ function OrderSection() {
     document.body.removeChild(waLink2);
 
     setForm(ORDER_FORM_INIT);
+    setHoneypot("");
     toast.success("Order placed! WhatsApp opened to notify the business.");
   };
 
@@ -1716,6 +1818,17 @@ function OrderSection() {
               />
             </div>
 
+            {/* Honeypot field - hidden from real users, catches bots */}
+            <input
+              type="text"
+              name="website"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              aria-hidden="true"
+              style={{ display: "none" }}
+              autoComplete="off"
+            />
             <Button
               type="submit"
               disabled={submitting}
@@ -2766,9 +2879,417 @@ function AboutPage({ setPage }: { setPage: (p: "home" | "about") => void }) {
   );
 }
 
+// ─── Admin Panel ──────────────────────────────────────────────────────────────
+interface AdminOrder {
+  id: bigint;
+  name: string;
+  phone: string;
+  email: string;
+  service_type: string;
+  product_interest: string;
+  address: string;
+  preferred_date: string;
+  notes: string;
+  timestamp: bigint;
+}
+interface AdminReview {
+  id: bigint;
+  name: string;
+  stars: bigint;
+  message: string;
+  timestamp: bigint;
+}
+
+function formatTs(ns: bigint): string {
+  const ms = Number(ns / 1_000_000n);
+  return new Date(ms).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function AdminPanel() {
+  const { actor } = useActor();
+  const [password, setPassword] = useState("");
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [orders, setOrders] = useState<AdminOrder[]>([]);
+  const [reviews, setReviews] = useState<AdminReview[]>([]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!actor) {
+      setAuthError("Connecting to server...");
+      return;
+    }
+    setLoading(true);
+    setAuthError("");
+    try {
+      const ok = await actor.verifyAdmin(password);
+      if (ok) {
+        setLoggedIn(true);
+        const [ords, revs] = await Promise.all([
+          actor.getAllOrders(password),
+          actor.getAllReviews(password),
+        ]);
+        if (ords) setOrders(ords as AdminOrder[]);
+        if (revs) setReviews(revs as AdminReview[]);
+      } else {
+        setAuthError("Incorrect password. Please try again.");
+      }
+    } catch {
+      setAuthError("Connection error. Please try again.");
+    }
+    setLoading(false);
+  };
+
+  const bgStyle = { background: "oklch(0.12 0.04 250)", minHeight: "100vh" };
+  const cardStyle = {
+    background: "oklch(0.17 0.04 250)",
+    border: "1px solid oklch(0.55 0.18 230 / 0.3)",
+    borderRadius: "1rem",
+  };
+  const inputStyle = {
+    background: "oklch(0.10 0.04 250)",
+    borderColor: "oklch(0.28 0.06 250)",
+    color: "white",
+  };
+
+  if (!loggedIn) {
+    return (
+      <div style={bgStyle} className="flex items-center justify-center p-6">
+        <div
+          style={{
+            ...cardStyle,
+            width: "100%",
+            maxWidth: "420px",
+            padding: "2.5rem",
+          }}
+        >
+          <div className="flex flex-col items-center gap-4 mb-8">
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center"
+              style={{
+                background: "oklch(0.55 0.18 230 / 0.15)",
+                border: "1px solid oklch(0.55 0.18 230 / 0.4)",
+              }}
+            >
+              <Shield
+                className="w-7 h-7"
+                style={{ color: "oklch(0.75 0.14 220)" }}
+              />
+            </div>
+            <div className="text-center">
+              <h1
+                className="text-xl font-bold text-white"
+                style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+              >
+                Admin Login
+              </h1>
+              <p
+                className="text-sm mt-1"
+                style={{ color: "oklch(0.55 0.04 250)" }}
+              >
+                Cool Refrigeration — Secure Area
+              </p>
+            </div>
+          </div>
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="admin-pw"
+                className="text-xs font-semibold uppercase tracking-wider"
+                style={{ color: "oklch(0.72 0.04 250)" }}
+              >
+                Password
+              </Label>
+              <div className="relative">
+                <Lock
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+                  style={{ color: "oklch(0.55 0.04 250)" }}
+                />
+                <Input
+                  id="admin-pw"
+                  type="password"
+                  placeholder="Enter admin password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  style={{ ...inputStyle, paddingLeft: "2.5rem" }}
+                  className="placeholder:text-[oklch(0.42_0.04_250)]"
+                />
+              </div>
+            </div>
+            {authError && (
+              <p
+                className="text-xs text-center"
+                style={{ color: "oklch(0.65 0.2 25)" }}
+              >
+                {authError}
+              </p>
+            )}
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full uppercase text-xs font-bold tracking-wider"
+              style={{
+                background: "oklch(0.55 0.18 230)",
+                color: "white",
+                boxShadow: "0 0 25px oklch(0.55 0.18 230 / 0.4)",
+              }}
+            >
+              {loading ? "Verifying..." : "Login"}
+            </Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={bgStyle} className="p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <Shield
+              className="w-6 h-6"
+              style={{ color: "oklch(0.75 0.14 220)" }}
+            />
+            <div>
+              <h1
+                className="text-xl font-bold text-white"
+                style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+              >
+                Admin Dashboard
+              </h1>
+              <p className="text-xs" style={{ color: "oklch(0.55 0.04 250)" }}>
+                Cool Refrigeration
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={() => {
+              setLoggedIn(false);
+              setPassword("");
+              setOrders([]);
+              setReviews([]);
+            }}
+            variant="outline"
+            className="text-xs uppercase tracking-wider"
+            style={{
+              borderColor: "oklch(0.55 0.18 230 / 0.4)",
+              color: "oklch(0.75 0.14 220)",
+              background: "transparent",
+            }}
+          >
+            Logout
+          </Button>
+        </div>
+
+        <Tabs defaultValue="orders">
+          <TabsList
+            style={{
+              background: "oklch(0.17 0.04 250)",
+              border: "1px solid oklch(0.55 0.18 230 / 0.2)",
+            }}
+            className="mb-6"
+          >
+            <TabsTrigger
+              value="orders"
+              className="text-xs uppercase tracking-wider data-[state=active]:text-white"
+            >
+              Orders ({orders.length})
+            </TabsTrigger>
+            <TabsTrigger
+              value="reviews"
+              className="text-xs uppercase tracking-wider data-[state=active]:text-white"
+            >
+              Reviews ({reviews.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="orders">
+            <div style={cardStyle} className="overflow-hidden">
+              {orders.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <p
+                    className="text-sm"
+                    style={{ color: "oklch(0.55 0.04 250)" }}
+                  >
+                    No orders yet
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow style={{ borderColor: "oklch(0.28 0.06 250)" }}>
+                        {[
+                          "Date/Time",
+                          "Name",
+                          "Phone",
+                          "Email",
+                          "Service",
+                          "Product",
+                          "Address",
+                          "Notes",
+                        ].map((h) => (
+                          <TableHead
+                            key={h}
+                            className="text-xs uppercase tracking-wider"
+                            style={{
+                              color: "oklch(0.75 0.14 220)",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orders.map((o) => (
+                        <TableRow
+                          key={String(o.id)}
+                          style={{ borderColor: "oklch(0.22 0.04 250)" }}
+                        >
+                          <TableCell className="text-xs text-white whitespace-nowrap">
+                            {formatTs(o.timestamp)}
+                          </TableCell>
+                          <TableCell className="text-xs text-white">
+                            {o.name}
+                          </TableCell>
+                          <TableCell className="text-xs text-white whitespace-nowrap">
+                            {o.phone}
+                          </TableCell>
+                          <TableCell className="text-xs text-white">
+                            {o.email || "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-white whitespace-nowrap">
+                            {o.service_type}
+                          </TableCell>
+                          <TableCell className="text-xs text-white whitespace-nowrap">
+                            {o.product_interest || "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-white">
+                            {o.address}
+                          </TableCell>
+                          <TableCell className="text-xs text-white">
+                            {o.notes || "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="reviews">
+            {reviews.length === 0 ? (
+              <div
+                style={cardStyle}
+                className="flex flex-col items-center justify-center py-16"
+              >
+                <p
+                  className="text-sm"
+                  style={{ color: "oklch(0.55 0.04 250)" }}
+                >
+                  No reviews yet
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {reviews.map((r) => (
+                  <div
+                    key={String(r.id)}
+                    style={cardStyle}
+                    className="p-5 flex flex-col gap-3"
+                  >
+                    <div className="flex items-start justify-between">
+                      <p className="font-semibold text-sm text-white">
+                        {r.name}
+                      </p>
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className="w-3.5 h-3.5"
+                            style={{
+                              color:
+                                s <= Number(r.stars)
+                                  ? "oklch(0.85 0.15 90)"
+                                  : "oklch(0.35 0.04 250)",
+                              fill:
+                                s <= Number(r.stars)
+                                  ? "oklch(0.85 0.15 90)"
+                                  : "transparent",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <p
+                      className="text-xs"
+                      style={{ color: "oklch(0.72 0.04 250)" }}
+                    >
+                      {r.message}
+                    </p>
+                    <p
+                      className="text-xs"
+                      style={{ color: "oklch(0.45 0.04 250)" }}
+                    >
+                      {formatTs(r.timestamp)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [page, setPage] = useState<"home" | "about">("home");
+  const [isAdmin, setIsAdmin] = useState(
+    () =>
+      window.location.hash === "#admin" ||
+      window.location.pathname === "/admin",
+  );
+
+  useEffect(() => {
+    const handler = () => {
+      setIsAdmin(
+        window.location.hash === "#admin" ||
+          window.location.pathname === "/admin",
+      );
+    };
+    window.addEventListener("hashchange", handler);
+    window.addEventListener("popstate", handler);
+    return () => {
+      window.removeEventListener("hashchange", handler);
+      window.removeEventListener("popstate", handler);
+    };
+  }, []);
+
+  if (isAdmin) {
+    return (
+      <>
+        <Toaster position="top-right" richColors />
+        <AdminPanel />
+      </>
+    );
+  }
+
   return (
     <CartProvider>
       <div className="min-h-screen bg-background">

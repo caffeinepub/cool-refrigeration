@@ -8,10 +8,96 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const idlService = IDL.Service({});
+export const Time = IDL.Int;
+export const Order = IDL.Record({
+  'id' : IDL.Nat,
+  'preferred_date' : IDL.Text,
+  'service_type' : IDL.Text,
+  'name' : IDL.Text,
+  'email' : IDL.Text,
+  'product_interest' : IDL.Text,
+  'address' : IDL.Text,
+  'notes' : IDL.Text,
+  'timestamp' : Time,
+  'phone' : IDL.Text,
+});
+export const Review = IDL.Record({
+  'id' : IDL.Nat,
+  'name' : IDL.Text,
+  'stars' : IDL.Nat,
+  'message' : IDL.Text,
+  'timestamp' : Time,
+});
+
+export const idlService = IDL.Service({
+  'getAllOrders' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Vec(Order))], ['query']),
+  'getAllReviews' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Vec(Review))], ['query']),
+  'submitOrder' : IDL.Func(
+      [
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+      ],
+      [IDL.Bool],
+      [],
+    ),
+  'submitReview' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [IDL.Bool], []),
+  'verifyAdmin' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+});
 
 export const idlInitArgs = [];
 
-export const idlFactory = ({ IDL }) => { return IDL.Service({}); };
+export const idlFactory = ({ IDL }) => {
+  const Time = IDL.Int;
+  const Order = IDL.Record({
+    'id' : IDL.Nat,
+    'preferred_date' : IDL.Text,
+    'service_type' : IDL.Text,
+    'name' : IDL.Text,
+    'email' : IDL.Text,
+    'product_interest' : IDL.Text,
+    'address' : IDL.Text,
+    'notes' : IDL.Text,
+    'timestamp' : Time,
+    'phone' : IDL.Text,
+  });
+  const Review = IDL.Record({
+    'id' : IDL.Nat,
+    'name' : IDL.Text,
+    'stars' : IDL.Nat,
+    'message' : IDL.Text,
+    'timestamp' : Time,
+  });
+  
+  return IDL.Service({
+    'getAllOrders' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Vec(Order))], ['query']),
+    'getAllReviews' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(IDL.Vec(Review))],
+        ['query'],
+      ),
+    'submitOrder' : IDL.Func(
+        [
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+        ],
+        [IDL.Bool],
+        [],
+      ),
+    'submitReview' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [IDL.Bool], []),
+    'verifyAdmin' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+  });
+};
 
 export const init = ({ IDL }) => { return []; };
