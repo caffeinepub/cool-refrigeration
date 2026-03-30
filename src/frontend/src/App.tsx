@@ -38,13 +38,8 @@ import {
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import type React from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // ─── Cart Context ──────────────────────────────────────────────────────────────
@@ -975,159 +970,6 @@ function Products() {
                   {p.desc}
                 </p>
                 <AddToCartButton product={p} index={i} />
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── AC Installation Videos ───────────────────────────────────────────────────
-const AC_VIDEOS = [
-  {
-    title: "AC Installation - Cool Refrigeration",
-    description: "Professional AC installation by Cool Refrigeration, Kolkata",
-    youtubeId: "Fhtm_0Yh47w",
-  },
-  {
-    title: "Split AC Installation Guide",
-    description: "Step-by-step professional split AC installation process",
-    youtubeId: "wFKalj8gAqA",
-  },
-  {
-    title: "Window AC Installation",
-    description: "How to install a window AC unit properly and safely",
-    youtubeId: "z3xl3tkdO3A",
-  },
-  {
-    title: "AC Outdoor Unit Setup",
-    description: "Professional outdoor unit installation and wiring tips",
-    youtubeId: "3HFt1u8ZKMI",
-  },
-];
-
-function ACVideosSection() {
-  const [activeVideo, setActiveVideo] = React.useState<string | null>(null);
-  return (
-    <section
-      id="ac-videos"
-      className="py-24"
-      style={{
-        background:
-          "linear-gradient(180deg, oklch(0.12 0.02 240) 0%, oklch(0.10 0.02 240) 100%)",
-      }}
-    >
-      <div className="max-w-6xl mx-auto px-6">
-        <motion.div
-          className="text-center mb-14"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-        >
-          <h2 className="section-title">AC Installation Videos</h2>
-          <p className="section-subtitle">
-            Watch our professional AC installation process — transparent,
-            skilled, and efficient.
-          </p>
-        </motion.div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {AC_VIDEOS.map((video, i) => (
-            <motion.div
-              key={video.youtubeId}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="rounded-2xl overflow-hidden"
-              style={{
-                background: "oklch(0.16 0.04 240 / 0.8)",
-                border: "1px solid oklch(0.65 0.18 200 / 0.25)",
-                boxShadow: "0 4px 24px oklch(0.55 0.18 200 / 0.08)",
-              }}
-            >
-              <div
-                className="relative w-full"
-                style={{ paddingBottom: "56.25%" }}
-              >
-                {activeVideo === video.youtubeId ? (
-                  <iframe
-                    className="absolute inset-0 w-full h-full"
-                    src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=1`}
-                    title={video.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    className="absolute inset-0 w-full h-full flex items-center justify-center group cursor-pointer"
-                    style={{ background: "oklch(0.12 0.04 240)" }}
-                    onClick={() => setActiveVideo(video.youtubeId)}
-                    aria-label={`Play ${video.title}`}
-                  >
-                    <img
-                      src={`https://img.youtube.com/vi/${video.youtubeId}/hqdefault.jpg`}
-                      alt={video.title}
-                      className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-300"
-                    />
-                    <div
-                      className="relative z-10 w-16 h-16 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
-                      style={{
-                        background: "oklch(0.55 0.18 200 / 0.9)",
-                        boxShadow: "0 0 24px oklch(0.55 0.18 200 / 0.6)",
-                      }}
-                    >
-                      <svg
-                        aria-hidden="true"
-                        role="img"
-                        aria-label="Play"
-                        viewBox="0 0 24 24"
-                        fill="white"
-                        className="w-7 h-7 ml-1"
-                      >
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </div>
-                  </button>
-                )}
-              </div>
-              <div className="p-5">
-                <h3
-                  className="font-bold text-base mb-1"
-                  style={{ color: "oklch(0.88 0.06 200)" }}
-                >
-                  {video.title}
-                </h3>
-                <p className="text-sm opacity-70">{video.description}</p>
-                <a
-                  href={`https://www.youtube.com/watch?v=${video.youtubeId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-ocid="videos.youtube_button"
-                  className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 hover:scale-105"
-                  style={{
-                    background: "oklch(0.16 0.06 240)",
-                    border: "1px solid oklch(0.65 0.18 200 / 0.4)",
-                    color: "oklch(0.85 0.14 200)",
-                    boxShadow: "0 0 10px oklch(0.55 0.18 200 / 0.2)",
-                  }}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="w-4 h-4"
-                    style={{ color: "#ff0000" }}
-                    aria-label="YouTube"
-                    role="img"
-                  >
-                    <title>YouTube</title>
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                  </svg>
-                  Watch on YouTube
-                </a>
               </div>
             </motion.div>
           ))}
@@ -2925,7 +2767,6 @@ export default function App() {
             <Services />
             <OwnerSection />
             <Products />
-            <ACVideosSection />
             <MaintenanceBand />
             <Testimonials />
             <CustomerReviews />
