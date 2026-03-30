@@ -961,17 +961,6 @@ function Products() {
               style={{ boxShadow: "0 4px 30px oklch(0 0 0 / 0.3)" }}
               data-ocid={`products.item.${i + 1}`}
             >
-              <div
-                className="aspect-square overflow-hidden"
-                style={{ background: "oklch(0.10 0.04 250)" }}
-              >
-                <img
-                  src={p.img}
-                  alt={p.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-              </div>
               <div className="p-5">
                 <h3
                   className="font-bold text-sm uppercase tracking-wide mb-2 text-white"
