@@ -126,10 +126,13 @@ function CartDrawer() {
     }
     const lines = entries.map((e) => `- ${e.item.name} x${e.qty}`).join("\n");
     const msg = `🛒 Cart Order - Cool Refrigeration\nItems:\n${lines}\nTotal Items: ${totalItems}\nPlease call me for pricing and details.`;
-    window.open(
-      `https://wa.me/918276938625?text=${encodeURIComponent(msg)}`,
-      "_blank",
-    );
+    const waLink1 = document.createElement("a");
+    waLink1.href = `https://wa.me/918276938625?text=${encodeURIComponent(msg)}`;
+    waLink1.target = "_blank";
+    waLink1.rel = "noopener noreferrer";
+    document.body.appendChild(waLink1);
+    waLink1.click();
+    document.body.removeChild(waLink1);
     clear();
     setCartOpen(false);
     toast.success("WhatsApp opened with your cart details!");
@@ -1471,7 +1474,13 @@ function OrderSection() {
       .join("\n");
 
     const waUrl = `https://wa.me/918276938625?text=${encodeURIComponent(msg)}`;
-    window.open(waUrl, "_blank");
+    const waLink2 = document.createElement("a");
+    waLink2.href = waUrl;
+    waLink2.target = "_blank";
+    waLink2.rel = "noopener noreferrer";
+    document.body.appendChild(waLink2);
+    waLink2.click();
+    document.body.removeChild(waLink2);
 
     setForm(ORDER_FORM_INIT);
     toast.success("Order placed! WhatsApp opened to notify the business.");
