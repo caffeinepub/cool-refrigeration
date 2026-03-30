@@ -432,9 +432,9 @@ function Header({ setPage }: { setPage: (p: "home" | "about") => void }) {
           data-ocid="header.link"
         >
           <img
-            src="/assets/uploads/screenshot_20250326_050441_contacts-019d3b0c-4668-7165-b8d6-ba06ce98f43d-1.jpg"
+            src="/assets/white_and_black_professional_design_football_club_logo_20260330_134603_0000-019d3dd5-8280-743a-9bc1-64c3380cb0d3.png"
             alt="Cool Refrigeration Logo"
-            className="h-10 w-auto object-contain"
+            className="h-20 w-auto object-contain"
           />
         </button>
 
@@ -873,22 +873,22 @@ function OwnerSection() {
 const PRODUCTS = [
   {
     name: "Window AC Unit",
-    img: "/assets/generated/product-window-ac.dim_400x400.jpg",
+    img: "/assets/generated/window-ac.dim_600x400.jpg",
     desc: "Energy-efficient window air conditioners for homes, offices, and small commercial spaces. Easy installation.",
   },
   {
     name: "Split AC",
-    img: "/assets/generated/product-split-ac.dim_400x400.jpg",
+    img: "/assets/generated/split-ac.dim_600x400.jpg",
     desc: "High-performance split air conditioners for homes, hotels, and restaurants. Quiet operation with superior cooling.",
   },
   {
     name: "Fridge Single Door",
-    img: "/assets/generated/product-fridge-single.dim_400x400.jpg",
+    img: "/assets/generated/fridge-single-door.dim_600x400.jpg",
     desc: "Reliable single door refrigerators for homes and small kitchens. Energy-saving models from all major brands.",
   },
   {
     name: "Fridge Double Door",
-    img: "/assets/generated/product-fridge-double.dim_400x400.jpg",
+    img: "/assets/generated/fridge-double-door.dim_600x400.jpg",
     desc: "Spacious double door refrigerators ideal for families, restaurants, and hotels. Frost-free with modern features.",
   },
 ];
@@ -896,7 +896,7 @@ const PRODUCTS = [
 function AddToCartButton({
   product,
   index,
-}: { product: { name: string }; index: number }) {
+}: { product: { name: string; img?: string }; index: number }) {
   const { add } = useCart();
   const id = product.name.toLowerCase().replace(/\s+/g, "-");
   return (
@@ -956,6 +956,15 @@ function Products() {
               style={{ boxShadow: "0 4px 30px oklch(0 0 0 / 0.3)" }}
               data-ocid={`products.item.${i + 1}`}
             >
+              {p.img && (
+                <div className="h-48 overflow-hidden">
+                  <img
+                    src={p.img}
+                    alt={p.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+              )}
               <div className="p-5">
                 <h3
                   className="font-bold text-sm uppercase tracking-wide mb-2 text-white"
@@ -2185,9 +2194,9 @@ function Footer({ setPage }: { setPage: (p: "home" | "about") => void }) {
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <img
-                src="/assets/uploads/screenshot_20250326_050441_contacts-019d3b0c-4668-7165-b8d6-ba06ce98f43d-1.jpg"
+                src="/assets/white_and_black_professional_design_football_club_logo_20260330_134603_0000-019d3dd5-8280-743a-9bc1-64c3380cb0d3.png"
                 alt="Cool Refrigeration Logo"
-                className="h-8 w-auto object-contain"
+                className="h-16 w-auto object-contain"
               />
             </div>
             <p
