@@ -13,9 +13,11 @@ import { Toaster } from "@/components/ui/sonner";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Banknote,
+  CheckCircle,
   ChevronUp,
   ClipboardCopy,
   Facebook,
+  Info,
   Instagram,
   Linkedin,
   Mail,
@@ -36,7 +38,13 @@ import {
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 // ─── Cart Context ──────────────────────────────────────────────────────────────
@@ -343,6 +351,7 @@ const NAV_LINKS = [
   { label: "ORDER", href: "#order" },
   { label: "PAYMENT", href: "#payment" },
   { label: "CONTACT", href: "#contact" },
+  { label: "ABOUT", href: "about" },
 ];
 
 const SOCIAL_LINKS = [
@@ -383,7 +392,7 @@ function CartIconButton() {
   );
 }
 
-function Header() {
+function Header({ setPage }: { setPage: (p: "home" | "about") => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -395,7 +404,13 @@ function Header() {
 
   const handleNav = (href: string) => {
     setMenuOpen(false);
-    scrollTo(href);
+    if (href === "about") {
+      setPage("about");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    setPage("home");
+    setTimeout(() => scrollTo(href), 50);
   };
 
   return (
@@ -414,7 +429,10 @@ function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
         <button
           type="button"
-          onClick={() => handleNav("#home")}
+          onClick={() => {
+            setPage("home");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
           className="flex items-center gap-2 group"
           data-ocid="header.link"
         >
@@ -968,6 +986,159 @@ function Products() {
                   {p.desc}
                 </p>
                 <AddToCartButton product={p} index={i} />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── AC Installation Videos ───────────────────────────────────────────────────
+const AC_VIDEOS = [
+  {
+    title: "AC Installation - Cool Refrigeration",
+    description: "Professional AC installation by Cool Refrigeration, Kolkata",
+    youtubeId: "Fhtm_0Yh47w",
+  },
+  {
+    title: "Split AC Installation Guide",
+    description: "Step-by-step professional split AC installation process",
+    youtubeId: "wFKalj8gAqA",
+  },
+  {
+    title: "Window AC Installation",
+    description: "How to install a window AC unit properly and safely",
+    youtubeId: "z3xl3tkdO3A",
+  },
+  {
+    title: "AC Outdoor Unit Setup",
+    description: "Professional outdoor unit installation and wiring tips",
+    youtubeId: "3HFt1u8ZKMI",
+  },
+];
+
+function ACVideosSection() {
+  const [activeVideo, setActiveVideo] = React.useState<string | null>(null);
+  return (
+    <section
+      id="ac-videos"
+      className="py-24"
+      style={{
+        background:
+          "linear-gradient(180deg, oklch(0.12 0.02 240) 0%, oklch(0.10 0.02 240) 100%)",
+      }}
+    >
+      <div className="max-w-6xl mx-auto px-6">
+        <motion.div
+          className="text-center mb-14"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="section-title">AC Installation Videos</h2>
+          <p className="section-subtitle">
+            Watch our professional AC installation process — transparent,
+            skilled, and efficient.
+          </p>
+        </motion.div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {AC_VIDEOS.map((video, i) => (
+            <motion.div
+              key={video.youtubeId}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              className="rounded-2xl overflow-hidden"
+              style={{
+                background: "oklch(0.16 0.04 240 / 0.8)",
+                border: "1px solid oklch(0.65 0.18 200 / 0.25)",
+                boxShadow: "0 4px 24px oklch(0.55 0.18 200 / 0.08)",
+              }}
+            >
+              <div
+                className="relative w-full"
+                style={{ paddingBottom: "56.25%" }}
+              >
+                {activeVideo === video.youtubeId ? (
+                  <iframe
+                    className="absolute inset-0 w-full h-full"
+                    src={`https://www.youtube.com/embed/${video.youtubeId}?autoplay=1`}
+                    title={video.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    className="absolute inset-0 w-full h-full flex items-center justify-center group cursor-pointer"
+                    style={{ background: "oklch(0.12 0.04 240)" }}
+                    onClick={() => setActiveVideo(video.youtubeId)}
+                    aria-label={`Play ${video.title}`}
+                  >
+                    <img
+                      src={`https://img.youtube.com/vi/${video.youtubeId}/hqdefault.jpg`}
+                      alt={video.title}
+                      className="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity duration-300"
+                    />
+                    <div
+                      className="relative z-10 w-16 h-16 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+                      style={{
+                        background: "oklch(0.55 0.18 200 / 0.9)",
+                        boxShadow: "0 0 24px oklch(0.55 0.18 200 / 0.6)",
+                      }}
+                    >
+                      <svg
+                        aria-hidden="true"
+                        role="img"
+                        aria-label="Play"
+                        viewBox="0 0 24 24"
+                        fill="white"
+                        className="w-7 h-7 ml-1"
+                      >
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                  </button>
+                )}
+              </div>
+              <div className="p-5">
+                <h3
+                  className="font-bold text-base mb-1"
+                  style={{ color: "oklch(0.88 0.06 200)" }}
+                >
+                  {video.title}
+                </h3>
+                <p className="text-sm opacity-70">{video.description}</p>
+                <a
+                  href={`https://www.youtube.com/watch?v=${video.youtubeId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-ocid="videos.youtube_button"
+                  className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 hover:scale-105"
+                  style={{
+                    background: "oklch(0.16 0.06 240)",
+                    border: "1px solid oklch(0.65 0.18 200 / 0.4)",
+                    color: "oklch(0.85 0.14 200)",
+                    boxShadow: "0 0 10px oklch(0.55 0.18 200 / 0.2)",
+                  }}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    className="w-4 h-4"
+                    style={{ color: "#ff0000" }}
+                    aria-label="YouTube"
+                    role="img"
+                  >
+                    <title>YouTube</title>
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                  </svg>
+                  Watch on YouTube
+                </a>
               </div>
             </motion.div>
           ))}
@@ -2171,7 +2342,7 @@ function ContactSection() {
 }
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
-function Footer() {
+function Footer({ setPage }: { setPage: (p: "home" | "about") => void }) {
   return (
     <footer style={{ background: "oklch(0.09 0.035 252)" }}>
       <div
@@ -2228,7 +2399,15 @@ function Footer() {
                 <li key={l.href}>
                   <button
                     type="button"
-                    onClick={() => scrollTo(l.href)}
+                    onClick={() => {
+                      if (l.href === "about") {
+                        setPage("about");
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      } else {
+                        setPage("home");
+                        setTimeout(() => scrollTo(l.href), 50);
+                      }
+                    }}
                     className="text-sm transition-colors"
                     style={{ color: "oklch(0.5 0.04 250)" }}
                   >
@@ -2347,27 +2526,426 @@ function BackToTop() {
   );
 }
 
+// ─── About Page ───────────────────────────────────────────────────────────────
+function AboutPage({ setPage }: { setPage: (p: "home" | "about") => void }) {
+  const goToOrder = () => {
+    setPage("home");
+    setTimeout(() => {
+      const el = document.querySelector("#order");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }, 80);
+  };
+
+  return (
+    <div className="min-h-screen pt-20" data-ocid="about.page">
+      {/* Hero Banner */}
+      <section
+        className="relative py-24 px-6 text-center overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(135deg, oklch(0.10 0.04 250) 0%, oklch(0.14 0.08 230) 100%)",
+          borderBottom: "1px solid oklch(0.55 0.18 230 / 0.2)",
+        }}
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse 70% 60% at 50% 0%, oklch(0.55 0.18 230 / 0.12) 0%, transparent 70%)",
+          }}
+        />
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          className="relative z-10 max-w-3xl mx-auto"
+        >
+          <div
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-6"
+            style={{
+              background: "oklch(0.55 0.18 230 / 0.15)",
+              border: "1px solid oklch(0.55 0.18 230 / 0.3)",
+              color: "oklch(0.75 0.14 220)",
+            }}
+          >
+            <Info className="w-3.5 h-3.5" />
+            Our Story
+          </div>
+          <h1
+            className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight text-white mb-4"
+            style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+          >
+            About{" "}
+            <span style={{ color: "oklch(0.75 0.14 220)" }}>
+              Cool Refrigeration
+            </span>
+          </h1>
+          <p className="text-lg" style={{ color: "oklch(0.6 0.06 240)" }}>
+            Kolkata&apos;s Trusted Cooling Experts
+          </p>
+        </motion.div>
+      </section>
+
+      {/* Company Story */}
+      <section className="max-w-5xl mx-auto px-6 py-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="grid md:grid-cols-2 gap-10 items-center"
+        >
+          <div>
+            <h2
+              className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mb-5"
+              style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+            >
+              Who We <span style={{ color: "oklch(0.75 0.14 220)" }}>Are</span>
+            </h2>
+            <p
+              className="text-base leading-relaxed mb-4"
+              style={{ color: "oklch(0.62 0.04 250)" }}
+            >
+              Cool Refrigeration was founded to provide reliable, affordable AC
+              and refrigeration services to homes, restaurants, and hotels
+              across Kolkata. We believe every family and business deserves cool
+              comfort — especially through the city&apos;s intense summers.
+            </p>
+            <p
+              className="text-base leading-relaxed mb-4"
+              style={{ color: "oklch(0.62 0.04 250)" }}
+            >
+              Based at{" "}
+              <strong className="text-white">
+                2D Picnic Garden, 3rd Lane, Tiljala, Kolkata 700039
+              </strong>
+              , our team of experienced technicians brings fast, honest service
+              directly to your doorstep.
+            </p>
+            <p
+              className="text-base leading-relaxed"
+              style={{ color: "oklch(0.62 0.04 250)" }}
+            >
+              From AC installation and servicing to fridge repair, we handle it
+              all — with genuine parts and transparent pricing.
+            </p>
+          </div>
+          <div
+            className="rounded-2xl p-8 backdrop-blur-sm"
+            style={{
+              background: "oklch(0.13 0.05 250 / 0.8)",
+              border: "1px solid oklch(0.55 0.18 230 / 0.2)",
+              boxShadow: "0 8px 40px oklch(0 0 0 / 0.3)",
+            }}
+          >
+            <h3
+              className="text-white font-bold text-lg mb-4"
+              style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+            >
+              Business Details
+            </h3>
+            {[
+              { label: "Location", value: "Tiljala, Kolkata 700039" },
+              { label: "Phone", value: "+91 82769 38625" },
+              { label: "Email", value: "coolrefrigeration318@gmail.com" },
+              { label: "Speciality", value: "AC & Refrigeration Services" },
+              { label: "Service Area", value: "All of Kolkata" },
+            ].map(({ label, value }) => (
+              <div
+                key={label}
+                className="flex items-start gap-3 mb-3 last:mb-0"
+              >
+                <span
+                  className="text-xs font-bold uppercase tracking-wider mt-1"
+                  style={{ color: "oklch(0.75 0.14 220)", minWidth: "80px" }}
+                >
+                  {label}
+                </span>
+                <span
+                  className="text-sm"
+                  style={{ color: "oklch(0.72 0.04 250)" }}
+                >
+                  {value}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Services Summary */}
+      <section
+        className="py-16 px-6"
+        style={{ background: "oklch(0.10 0.04 250 / 0.6)" }}
+      >
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-center mb-12"
+          >
+            <h2
+              className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white"
+              style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+            >
+              Our{" "}
+              <span style={{ color: "oklch(0.75 0.14 220)" }}>Services</span>
+            </h2>
+          </motion.div>
+          <div className="grid sm:grid-cols-3 gap-6">
+            {[
+              {
+                icon: Zap,
+                title: "AC Installation",
+                desc: "Professional installation of Window AC and Split AC units for homes, offices, and commercial spaces.",
+              },
+              {
+                icon: Wrench,
+                title: "AC Service",
+                desc: "Complete AC servicing including deep cleaning, gas top-up, and performance tuning for all brands.",
+              },
+              {
+                icon: Snowflake,
+                title: "Fridge Repair",
+                desc: "Expert repair for all types of refrigerators — single door, double door, and commercial units.",
+              },
+            ].map(({ icon: Icon, title, desc }, i) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 * i + 0.3 }}
+                className="rounded-2xl p-6 backdrop-blur-sm"
+                style={{
+                  background: "oklch(0.13 0.05 250 / 0.7)",
+                  border: "1px solid oklch(0.55 0.18 230 / 0.2)",
+                }}
+              >
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+                  style={{ background: "oklch(0.55 0.18 230 / 0.15)" }}
+                >
+                  <Icon
+                    className="w-6 h-6"
+                    style={{ color: "oklch(0.75 0.14 220)" }}
+                  />
+                </div>
+                <h3
+                  className="text-white font-bold text-lg mb-2"
+                  style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+                >
+                  {title}
+                </h3>
+                <p
+                  className="text-sm leading-relaxed"
+                  style={{ color: "oklch(0.6 0.04 250)" }}
+                >
+                  {desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Owner Section */}
+      <section className="max-w-5xl mx-auto px-6 py-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="rounded-2xl p-8 md:p-12 backdrop-blur-sm flex flex-col md:flex-row gap-8 items-center"
+          style={{
+            background: "oklch(0.13 0.05 250 / 0.8)",
+            border: "1px solid oklch(0.55 0.18 230 / 0.2)",
+            boxShadow: "0 8px 40px oklch(0 0 0 / 0.3)",
+          }}
+        >
+          <img
+            src="/assets/uploads/screenshot_20250326_050441_contacts-019d3b03-4071-77ae-86aa-b69fd1bd50a1-1.jpg"
+            alt="Owner - Cool Refrigeration"
+            className="w-36 h-36 rounded-full object-cover flex-shrink-0"
+            style={{
+              border: "3px solid oklch(0.55 0.18 230 / 0.5)",
+              boxShadow: "0 0 30px oklch(0.55 0.18 230 / 0.3)",
+            }}
+          />
+          <div>
+            <p
+              className="text-xs font-semibold uppercase tracking-widest mb-2"
+              style={{ color: "oklch(0.75 0.14 220)" }}
+            >
+              Meet the Owner
+            </p>
+            <h3
+              className="text-2xl font-black text-white mb-3"
+              style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+            >
+              Owner — Cool Refrigeration
+            </h3>
+            <p
+              className="text-base leading-relaxed"
+              style={{ color: "oklch(0.62 0.04 250)" }}
+            >
+              With years of hands-on experience in AC and refrigeration
+              technology, our owner founded Cool Refrigeration with one mission:
+              to bring reliable, fast, and affordable cooling solutions to every
+              home and business in Kolkata. Every job is handled with care,
+              honesty, and technical expertise.
+            </p>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Why Choose Us */}
+      <section
+        className="py-16 px-6"
+        style={{ background: "oklch(0.10 0.04 250 / 0.6)" }}
+      >
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-center mb-12"
+          >
+            <h2
+              className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white"
+              style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+            >
+              Why{" "}
+              <span style={{ color: "oklch(0.75 0.14 220)" }}>Choose Us</span>
+            </h2>
+          </motion.div>
+          <div className="grid sm:grid-cols-3 gap-6">
+            {[
+              {
+                icon: Zap,
+                title: "Fast Service",
+                desc: "Same-day and next-day service slots available. We know Kolkata heat waits for no one.",
+              },
+              {
+                icon: CheckCircle,
+                title: "Genuine Parts",
+                desc: "We use only authentic, brand-compatible parts for all repairs and installations.",
+              },
+              {
+                icon: Wallet,
+                title: "Affordable Rates",
+                desc: "Transparent pricing with no hidden charges. Quality service at fair prices, always.",
+              },
+            ].map(({ icon: Icon, title, desc }, i) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 * i + 0.3 }}
+                className="rounded-2xl p-6 text-center backdrop-blur-sm"
+                style={{
+                  background: "oklch(0.13 0.05 250 / 0.7)",
+                  border: "1px solid oklch(0.55 0.18 230 / 0.2)",
+                }}
+              >
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{
+                    background: "oklch(0.55 0.18 230 / 0.15)",
+                    boxShadow: "0 0 20px oklch(0.55 0.18 230 / 0.2)",
+                  }}
+                >
+                  <Icon
+                    className="w-7 h-7"
+                    style={{ color: "oklch(0.75 0.14 220)" }}
+                  />
+                </div>
+                <h3
+                  className="text-white font-bold text-lg mb-2"
+                  style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+                >
+                  {title}
+                </h3>
+                <p
+                  className="text-sm leading-relaxed"
+                  style={{ color: "oklch(0.6 0.04 250)" }}
+                >
+                  {desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="max-w-3xl mx-auto px-6 py-16 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <h2
+            className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mb-4"
+            style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+          >
+            Ready to{" "}
+            <span style={{ color: "oklch(0.75 0.14 220)" }}>
+              Book a Service?
+            </span>
+          </h2>
+          <p
+            className="mb-8 text-base"
+            style={{ color: "oklch(0.62 0.04 250)" }}
+          >
+            Get in touch today. Fast response, honest pricing, expert service.
+          </p>
+          <Button
+            type="button"
+            onClick={goToOrder}
+            className="uppercase text-sm font-bold tracking-wider px-10 py-5 glow-btn"
+            style={{
+              background: "oklch(0.55 0.18 230)",
+              color: "white",
+              boxShadow: "0 0 30px oklch(0.55 0.18 230 / 0.5)",
+            }}
+            data-ocid="about.primary_button"
+          >
+            Book a Service Today
+          </Button>
+        </motion.div>
+      </section>
+    </div>
+  );
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
+  const [page, setPage] = useState<"home" | "about">("home");
   return (
     <CartProvider>
       <div className="min-h-screen bg-background">
         <Toaster position="top-right" richColors />
-        <Header />
+        <Header setPage={setPage} />
         <CartDrawer />
-        <main>
-          <Hero />
-          <Services />
-          <OwnerSection />
-          <Products />
-          <MaintenanceBand />
-          <Testimonials />
-          <CustomerReviews />
-          <OrderSection />
-          <PaymentSection />
-          <ContactSection />
-        </main>
-        <Footer />
+        {page === "about" ? (
+          <main>
+            <AboutPage setPage={setPage} />
+          </main>
+        ) : (
+          <main>
+            <Hero />
+            <Services />
+            <OwnerSection />
+            <Products />
+            <ACVideosSection />
+            <MaintenanceBand />
+            <Testimonials />
+            <CustomerReviews />
+            <OrderSection />
+            <PaymentSection />
+            <ContactSection />
+          </main>
+        )}
+        <Footer setPage={setPage} />
         <BackToTop />
       </div>
     </CartProvider>
