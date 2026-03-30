@@ -2,60 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/assets/fonts/BricolageGrotesque.woff2") format("woff2");
+  font-weight: 200 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("/assets/fonts/Satoshi.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   :root {
-    --radius: 0.5rem;
-    --background: 1 0 0;
-    --foreground: 0.2 0.01 270;
-    --card: 1 0 0;
-    --card-foreground: 0.2 0.01 270;
-    --popover: 1 0 0;
-    --popover-foreground: 0.2 0.01 270;
-    --primary: 0.55 0.12 230;
-    --primary-foreground: 1 0 0;
-    --secondary: 0.96 0.025 220;
-    --secondary-foreground: 0.2 0.01 270;
-    --muted: 0.96 0.025 220;
-    --muted-foreground: 0.55 0.01 270;
-    --accent: 0.96 0.025 220;
-    --accent-foreground: 0.2 0.01 270;
+    --radius: 0.75rem;
+    --background: 0.12 0.04 250;
+    --foreground: 0.97 0.01 250;
+    --card: 0.17 0.04 250;
+    --card-foreground: 0.97 0.01 250;
+    --popover: 0.17 0.04 250;
+    --popover-foreground: 0.97 0.01 250;
+    --primary: 0.55 0.18 230;
+    --primary-foreground: 0.97 0.01 250;
+    --secondary: 0.22 0.05 250;
+    --secondary-foreground: 0.97 0.01 250;
+    --muted: 0.22 0.05 250;
+    --muted-foreground: 0.65 0.04 250;
+    --accent: 0.75 0.14 220;
+    --accent-foreground: 0.12 0.04 250;
     --destructive: 0.577 0.245 27.325;
-    --destructive-foreground: 1 0 0;
-    --border: 0.92 0.01 220;
-    --input: 0.92 0.01 220;
-    --ring: 0.55 0.12 230;
-    --chart-1: 0.55 0.12 230;
-    --chart-2: 0.6 0.118 184.704;
-    --chart-3: 0.398 0.07 227.392;
+    --destructive-foreground: 0.97 0.01 250;
+    --border: 0.28 0.06 250;
+    --input: 0.22 0.05 250;
+    --ring: 0.75 0.14 220;
+    --chart-1: 0.75 0.14 220;
+    --chart-2: 0.55 0.18 230;
+    --chart-3: 0.65 0.12 200;
     --chart-4: 0.828 0.189 84.429;
     --chart-5: 0.769 0.188 70.08;
-    --sidebar: 0.985 0 0;
-    --sidebar-foreground: 0.2 0.01 270;
-    --sidebar-primary: 0.55 0.12 230;
-    --sidebar-primary-foreground: 1 0 0;
-    --sidebar-accent: 0.96 0.025 220;
-    --sidebar-accent-foreground: 0.2 0.01 270;
-    --sidebar-border: 0.922 0 0;
-    --sidebar-ring: 0.55 0.12 230;
-    --star-color: 0.85 0.15 90;
+    --sidebar: 0.15 0.04 250;
+    --sidebar-foreground: 0.97 0.01 250;
+    --sidebar-primary: 0.55 0.18 230;
+    --sidebar-primary-foreground: 0.97 0.01 250;
+    --sidebar-accent: 0.22 0.05 250;
+    --sidebar-accent-foreground: 0.97 0.01 250;
+    --sidebar-border: 0.28 0.06 250;
+    --sidebar-ring: 0.75 0.14 220;
   }
 
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
-    font-family: "Inter", system-ui, sans-serif;
+    font-family: "Satoshi", "Inter", system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
   }
 }
 
 @layer utilities {
   .section-title {
     @apply text-3xl font-bold uppercase tracking-widest text-center mb-4;
+    font-family: "Bricolage Grotesque", sans-serif;
     color: oklch(var(--foreground));
   }
   .section-subtitle {
     @apply text-center text-lg max-w-2xl mx-auto mb-12;
     color: oklch(var(--muted-foreground));
+  }
+  .glow-text {
+    text-shadow: 0 0 30px oklch(0.75 0.14 220 / 0.6), 0 0 60px
+      oklch(0.75 0.14 220 / 0.3);
+  }
+  .glow-border {
+    box-shadow: 0 0 20px oklch(0.55 0.18 230 / 0.3), inset 0 0 20px
+      oklch(0.55 0.18 230 / 0.05);
+  }
+  .glass-card {
+    background: oklch(0.17 0.04 250 / 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid oklch(0.55 0.18 230 / 0.2);
+  }
+  .glow-btn {
+    box-shadow: 0 0 20px oklch(0.55 0.18 230 / 0.5), 0 4px 15px
+      oklch(0.55 0.18 230 / 0.3);
+  }
+  .glow-btn:hover {
+    box-shadow: 0 0 35px oklch(0.75 0.14 220 / 0.6), 0 4px 20px
+      oklch(0.55 0.18 230 / 0.5);
   }
 }
