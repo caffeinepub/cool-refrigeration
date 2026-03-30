@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -20,9 +21,14 @@ import {
   Mail,
   MapPin,
   Menu,
+  MessageCircle,
+  Minus,
   Phone,
+  Plus,
+  ShoppingCart,
   Snowflake,
   Star,
+  Trash2,
   Twitter,
   Wallet,
   Wrench,
@@ -30,8 +36,301 @@ import {
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+
+// ─── Cart Context ──────────────────────────────────────────────────────────────
+interface CartItem {
+  id: string;
+  name: string;
+}
+
+interface CartEntry {
+  item: CartItem;
+  qty: number;
+}
+
+interface CartCtx {
+  entries: CartEntry[];
+  add: (item: CartItem) => void;
+  remove: (id: string) => void;
+  setQty: (id: string, qty: number) => void;
+  clear: () => void;
+  cartOpen: boolean;
+  setCartOpen: (v: boolean) => void;
+}
+
+const CartContext = createContext<CartCtx | null>(null);
+
+function useCart() {
+  const ctx = useContext(CartContext);
+  if (!ctx) throw new Error("useCart must be used within CartProvider");
+  return ctx;
+}
+
+function CartProvider({ children }: { children: React.ReactNode }) {
+  const [entries, setEntries] = useState<CartEntry[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+
+  const add = (item: CartItem) => {
+    setEntries((prev) => {
+      const existing = prev.find((e) => e.item.id === item.id);
+      if (existing)
+        return prev.map((e) =>
+          e.item.id === item.id ? { ...e, qty: e.qty + 1 } : e,
+        );
+      return [...prev, { item, qty: 1 }];
+    });
+    setCartOpen(true);
+    toast.success(`${item.name} added to cart!`);
+  };
+
+  const remove = (id: string) =>
+    setEntries((prev) => prev.filter((e) => e.item.id !== id));
+
+  const setQty = (id: string, qty: number) => {
+    if (qty < 1) {
+      remove(id);
+      return;
+    }
+    setEntries((prev) =>
+      prev.map((e) => (e.item.id === id ? { ...e, qty } : e)),
+    );
+  };
+
+  const clear = () => setEntries([]);
+
+  return (
+    <CartContext.Provider
+      value={{ entries, add, remove, setQty, clear, cartOpen, setCartOpen }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
+}
+
+// ─── Cart Drawer ───────────────────────────────────────────────────────────────
+function CartDrawer() {
+  const { entries, remove, setQty, clear, cartOpen, setCartOpen } = useCart();
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  const totalItems = entries.reduce((s, e) => s + e.qty, 0);
+
+  const sendViaWhatsApp = () => {
+    if (entries.length === 0) {
+      toast.error("Your cart is empty!");
+      return;
+    }
+    const lines = entries.map((e) => `- ${e.item.name} x${e.qty}`).join("\n");
+    const msg = `🛒 Cart Order - Cool Refrigeration\nItems:\n${lines}\nTotal Items: ${totalItems}\nPlease call me for pricing and details.`;
+    window.open(
+      `https://wa.me/918276938625?text=${encodeURIComponent(msg)}`,
+      "_blank",
+    );
+    clear();
+    setCartOpen(false);
+    toast.success("WhatsApp opened with your cart details!");
+  };
+
+  return (
+    <AnimatePresence>
+      {cartOpen && (
+        <>
+          {/* Overlay */}
+          <motion.div
+            ref={overlayRef}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60]"
+            style={{ background: "oklch(0 0 0 / 0.6)" }}
+            onClick={() => setCartOpen(false)}
+            data-ocid="cart.modal"
+          />
+          {/* Drawer */}
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 280 }}
+            className="fixed top-0 right-0 h-full w-full max-w-md z-[70] flex flex-col"
+            style={{
+              background: "oklch(0.13 0.05 250)",
+              borderLeft: "1px solid oklch(0.55 0.18 230 / 0.25)",
+              boxShadow: "-10px 0 60px oklch(0 0 0 / 0.6)",
+            }}
+            data-ocid="cart.panel"
+          >
+            {/* Header */}
+            <div
+              className="flex items-center justify-between px-6 py-5 border-b"
+              style={{ borderColor: "oklch(0.55 0.18 230 / 0.2)" }}
+            >
+              <div className="flex items-center gap-3">
+                <ShoppingCart
+                  className="w-5 h-5"
+                  style={{ color: "oklch(0.75 0.14 220)" }}
+                />
+                <h2
+                  className="font-bold text-base uppercase tracking-wider text-white"
+                  style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+                >
+                  Your Cart
+                </h2>
+                {totalItems > 0 && (
+                  <span
+                    className="text-xs font-bold px-2 py-0.5 rounded-full"
+                    style={{
+                      background: "oklch(0.55 0.18 230)",
+                      color: "white",
+                    }}
+                  >
+                    {totalItems}
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setCartOpen(false)}
+                className="p-1 rounded-lg transition-colors"
+                style={{ color: "oklch(0.65 0.04 250)" }}
+                data-ocid="cart.close_button"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Items */}
+            <ScrollArea className="flex-1 px-6 py-4">
+              {entries.length === 0 ? (
+                <div
+                  className="flex flex-col items-center justify-center h-40 gap-3"
+                  data-ocid="cart.empty_state"
+                >
+                  <ShoppingCart
+                    className="w-12 h-12 opacity-20"
+                    style={{ color: "oklch(0.75 0.14 220)" }}
+                  />
+                  <p
+                    className="text-sm"
+                    style={{ color: "oklch(0.5 0.04 250)" }}
+                  >
+                    Your cart is empty
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {entries.map((e, idx) => (
+                    <div
+                      key={e.item.id}
+                      className="flex items-center gap-4 p-4 rounded-xl"
+                      style={{
+                        background: "oklch(0.10 0.04 250)",
+                        border: "1px solid oklch(0.55 0.18 230 / 0.15)",
+                      }}
+                      data-ocid={`cart.item.${idx + 1}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-white truncate">
+                          {e.item.name}
+                        </p>
+                        <p
+                          className="text-xs mt-0.5"
+                          style={{ color: "oklch(0.75 0.14 220)" }}
+                        >
+                          Call for Price
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setQty(e.item.id, e.qty - 1)}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                          style={{
+                            background: "oklch(0.18 0.05 250)",
+                            border: "1px solid oklch(0.55 0.18 230 / 0.3)",
+                            color: "oklch(0.75 0.14 220)",
+                          }}
+                          data-ocid={`cart.toggle.${idx + 1}`}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="w-6 text-center text-sm font-bold text-white">
+                          {e.qty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setQty(e.item.id, e.qty + 1)}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center transition-all"
+                          style={{
+                            background: "oklch(0.18 0.05 250)",
+                            border: "1px solid oklch(0.55 0.18 230 / 0.3)",
+                            color: "oklch(0.75 0.14 220)",
+                          }}
+                          data-ocid={`cart.toggle.${idx + 1}`}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => remove(e.item.id)}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center ml-1 transition-all"
+                          style={{
+                            background: "oklch(0.25 0.08 20 / 0.3)",
+                            border: "1px solid oklch(0.55 0.15 20 / 0.3)",
+                            color: "oklch(0.65 0.15 20)",
+                          }}
+                          data-ocid={`cart.delete_button.${idx + 1}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+
+            {/* Footer */}
+            {entries.length > 0 && (
+              <div
+                className="px-6 py-5 border-t flex flex-col gap-3"
+                style={{ borderColor: "oklch(0.55 0.18 230 / 0.2)" }}
+              >
+                <div className="flex justify-between items-center">
+                  <span
+                    className="text-sm font-semibold uppercase tracking-wider"
+                    style={{ color: "oklch(0.72 0.04 250)" }}
+                  >
+                    Total Items
+                  </span>
+                  <span className="font-bold text-white">{totalItems}</span>
+                </div>
+                <p className="text-xs" style={{ color: "oklch(0.5 0.04 250)" }}>
+                  Pricing on request — we'll call to confirm.
+                </p>
+                <Button
+                  type="button"
+                  onClick={sendViaWhatsApp}
+                  className="w-full uppercase text-xs font-bold tracking-wider gap-2 glow-btn"
+                  style={{
+                    background: "oklch(0.45 0.15 145)",
+                    color: "white",
+                    boxShadow: "0 0 20px oklch(0.45 0.15 145 / 0.5)",
+                  }}
+                  data-ocid="cart.primary_button"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Request Quote via WhatsApp
+                </Button>
+              </div>
+            )}
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
 
 // ─── Nav ──────────────────────────────────────────────────────────────────────
 const NAV_LINKS = [
@@ -59,6 +358,31 @@ function scrollTo(href: string) {
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────────
+function CartIconButton() {
+  const { entries, setCartOpen } = useCart();
+  const totalItems = entries.reduce((s, e) => s + e.qty, 0);
+  return (
+    <button
+      type="button"
+      onClick={() => setCartOpen(true)}
+      className="relative p-2 rounded-lg transition-all"
+      style={{ color: "oklch(0.75 0.14 220)" }}
+      aria-label="Open cart"
+      data-ocid="cart.open_modal_button"
+    >
+      <ShoppingCart className="w-5 h-5" />
+      {totalItems > 0 && (
+        <span
+          className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+          style={{ background: "oklch(0.55 0.18 230)", color: "white" }}
+        >
+          {totalItems}
+        </span>
+      )}
+    </button>
+  );
+}
+
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -123,6 +447,7 @@ function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <CartIconButton />
           <Button
             type="button"
             onClick={() => handleNav("#order")}
@@ -555,6 +880,32 @@ const PRODUCTS = [
   },
 ];
 
+function AddToCartButton({
+  product,
+  index,
+}: { product: { name: string }; index: number }) {
+  const { add } = useCart();
+  const id = product.name.toLowerCase().replace(/\s+/g, "-");
+  return (
+    <div className="flex gap-2">
+      <button
+        type="button"
+        onClick={() => add({ id, name: product.name })}
+        className="flex-1 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg transition-all glow-btn"
+        style={{
+          background: "oklch(0.55 0.18 230 / 0.15)",
+          border: "1px solid oklch(0.55 0.18 230 / 0.4)",
+          color: "oklch(0.75 0.14 220)",
+        }}
+        data-ocid={`products.button.${index + 1}`}
+      >
+        <ShoppingCart className="w-3.5 h-3.5" />
+        Add to Cart
+      </button>
+    </div>
+  );
+}
+
 function Products() {
   return (
     <section
@@ -616,15 +967,7 @@ function Products() {
                 >
                   {p.desc}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => scrollTo("#order")}
-                  className="text-xs font-semibold uppercase tracking-wider flex items-center gap-1 transition-all"
-                  style={{ color: "oklch(0.75 0.14 220)" }}
-                  data-ocid={`products.button.${i + 1}`}
-                >
-                  Place an Order <span>→</span>
-                </button>
+                <AddToCartButton product={p} index={i} />
               </div>
             </motion.div>
           ))}
@@ -791,6 +1134,281 @@ function Testimonials() {
                   style={{ color: "oklch(0.75 0.14 220)" }}
                 >
                   {t.role}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Customer Reviews ─────────────────────────────────────────────────────────
+interface Review {
+  id: number;
+  name: string;
+  rating: number;
+  message: string;
+  date: string;
+}
+
+const SAMPLE_REVIEWS: Review[] = [
+  {
+    id: 1,
+    name: "Suresh Mondal",
+    rating: 5,
+    message:
+      "Excellent service! My Split AC was installed within a day. Very professional team and clean work. Highly recommended for anyone in Kolkata.",
+    date: "March 2026",
+  },
+  {
+    id: 2,
+    name: "Meena Ghosh",
+    rating: 5,
+    message:
+      "My fridge stopped cooling and they fixed it the same day I called. Very reasonable price and friendly technician. Will definitely call again.",
+    date: "February 2026",
+  },
+  {
+    id: 3,
+    name: "Tapas Roy",
+    rating: 4,
+    message:
+      "Good service for AC servicing. They were on time and did a thorough job. The AC is running much better now. Good value for money.",
+    date: "January 2026",
+  },
+];
+
+const STAR_KEYS_REVIEW = [1, 2, 3, 4, 5];
+
+function CustomerReviews() {
+  const [reviews, setReviews] = useState<Review[]>(SAMPLE_REVIEWS);
+  const [form, setForm] = useState({ name: "", rating: 5, message: "" });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.message.trim()) return;
+    setSubmitting(true);
+    await new Promise((r) => setTimeout(r, 600));
+    const now = new Date();
+    const date = now.toLocaleString("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+    setReviews((prev) => [
+      {
+        id: Date.now(),
+        name: form.name,
+        rating: form.rating,
+        message: form.message,
+        date,
+      },
+      ...prev,
+    ]);
+    setForm({ name: "", rating: 5, message: "" });
+    setSubmitting(false);
+    toast.success("Thank you for your review!");
+  };
+
+  const inputStyle = {
+    background: "oklch(0.10 0.04 250)",
+    borderColor: "oklch(0.28 0.06 250)",
+    color: "white",
+  };
+
+  return (
+    <section
+      id="reviews"
+      className="py-24"
+      style={{ background: "oklch(0.14 0.045 252)" }}
+    >
+      <div className="max-w-7xl mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <p
+            className="text-center text-xs font-bold uppercase tracking-[0.3em] mb-3"
+            style={{ color: "oklch(0.75 0.14 220)" }}
+          >
+            Customer Feedback
+          </p>
+          <h2 className="section-title">Customer Reviews</h2>
+          <p className="section-subtitle">
+            Share your experience and read what others say about our service.
+          </p>
+        </motion.div>
+
+        {/* Submit Review Form */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="max-w-2xl mx-auto mb-16"
+        >
+          <form
+            onSubmit={handleSubmit}
+            className="glass-card rounded-2xl p-8 flex flex-col gap-5"
+            style={{ boxShadow: "0 8px 50px oklch(0 0 0 / 0.4)" }}
+            data-ocid="reviews.panel"
+          >
+            <h3
+              className="font-bold text-base uppercase tracking-wider text-white"
+              style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+            >
+              Write a Review
+            </h3>
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="review-name"
+                className="text-xs font-semibold uppercase tracking-wider"
+                style={{ color: "oklch(0.72 0.04 250)" }}
+              >
+                Your Name *
+              </Label>
+              <Input
+                id="review-name"
+                placeholder="Enter your name"
+                value={form.name}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, name: e.target.value }))
+                }
+                required
+                style={inputStyle}
+                className="placeholder:text-[oklch(0.42_0.04_250)]"
+                data-ocid="reviews.input"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label
+                className="text-xs font-semibold uppercase tracking-wider"
+                style={{ color: "oklch(0.72 0.04 250)" }}
+              >
+                Rating *
+              </Label>
+              <div className="flex gap-2">
+                {STAR_KEYS_REVIEW.map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setForm((p) => ({ ...p, rating: star }))}
+                    className="transition-transform hover:scale-110"
+                    data-ocid="reviews.toggle"
+                  >
+                    <Star
+                      className="w-7 h-7"
+                      style={{
+                        color:
+                          star <= form.rating
+                            ? "oklch(0.85 0.15 90)"
+                            : "oklch(0.35 0.04 250)",
+                        fill:
+                          star <= form.rating
+                            ? "oklch(0.85 0.15 90)"
+                            : "transparent",
+                      }}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="review-message"
+                className="text-xs font-semibold uppercase tracking-wider"
+                style={{ color: "oklch(0.72 0.04 250)" }}
+              >
+                Your Review *
+              </Label>
+              <Textarea
+                id="review-message"
+                rows={4}
+                placeholder="Share your experience with Cool Refrigeration..."
+                value={form.message}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, message: e.target.value }))
+                }
+                required
+                style={inputStyle}
+                className="placeholder:text-[oklch(0.42_0.04_250)]"
+                data-ocid="reviews.textarea"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="uppercase text-xs font-bold tracking-wider glow-btn transition-all duration-300"
+              style={{
+                background: "oklch(0.55 0.18 230)",
+                color: "white",
+                boxShadow: "0 0 25px oklch(0.55 0.18 230 / 0.5)",
+              }}
+              data-ocid="reviews.submit_button"
+            >
+              {submitting ? "Submitting..." : "Submit Review"}
+            </Button>
+          </form>
+        </motion.div>
+
+        {/* Reviews Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {reviews.map((r, i) => (
+            <motion.div
+              key={r.id}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: i * 0.08 }}
+              className="glass-card rounded-2xl p-7 flex flex-col relative"
+              style={{ boxShadow: "0 4px 30px oklch(0 0 0 / 0.3)" }}
+              data-ocid={`reviews.item.${i + 1}`}
+            >
+              <div
+                className="text-5xl font-serif leading-none mb-2 -mt-2"
+                style={{ color: "oklch(0.55 0.18 230 / 0.3)" }}
+              >
+                ""
+              </div>
+              <div className="flex gap-1 mb-3">
+                {STAR_KEYS_REVIEW.map((star) => (
+                  <Star
+                    key={star}
+                    className="w-4 h-4"
+                    style={{
+                      color:
+                        star <= r.rating
+                          ? "oklch(0.85 0.15 90)"
+                          : "oklch(0.35 0.04 250)",
+                      fill:
+                        star <= r.rating
+                          ? "oklch(0.85 0.15 90)"
+                          : "transparent",
+                    }}
+                  />
+                ))}
+              </div>
+              <p
+                className="text-sm leading-relaxed mb-5 italic flex-1"
+                style={{ color: "oklch(0.72 0.04 250)" }}
+              >
+                "{r.message}"
+              </p>
+              <div
+                className="border-t pt-4 flex items-center justify-between"
+                style={{ borderColor: "oklch(0.55 0.18 230 / 0.15)" }}
+              >
+                <p
+                  className="font-bold text-sm text-white"
+                  style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+                >
+                  {r.name}
+                </p>
+                <p className="text-xs" style={{ color: "oklch(0.5 0.04 250)" }}>
+                  {r.date}
                 </p>
               </div>
             </motion.div>
@@ -1732,22 +2350,26 @@ function BackToTop() {
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   return (
-    <div className="min-h-screen bg-background">
-      <Toaster position="top-right" richColors />
-      <Header />
-      <main>
-        <Hero />
-        <Services />
-        <OwnerSection />
-        <Products />
-        <MaintenanceBand />
-        <Testimonials />
-        <OrderSection />
-        <PaymentSection />
-        <ContactSection />
-      </main>
-      <Footer />
-      <BackToTop />
-    </div>
+    <CartProvider>
+      <div className="min-h-screen bg-background">
+        <Toaster position="top-right" richColors />
+        <Header />
+        <CartDrawer />
+        <main>
+          <Hero />
+          <Services />
+          <OwnerSection />
+          <Products />
+          <MaintenanceBand />
+          <Testimonials />
+          <CustomerReviews />
+          <OrderSection />
+          <PaymentSection />
+          <ContactSection />
+        </main>
+        <Footer />
+        <BackToTop />
+      </div>
+    </CartProvider>
   );
 }
