@@ -1,47 +1,27 @@
-# Cool Refrigeration - Security Hardening
+# Cool Refrigeration
 
 ## Current State
-- Basic CSP in index.html (unsafe-eval, unsafe-inline present)
-- Simple honeypot + rate limiting on forms
-- Basic sanitizeInput (HTML entity encoding)
-- Admin panel at #admin, no auth
-- Email address exposed as plain text in HTML
-- No additional security headers beyond CSP
-- No visible trust/security indicators for customers
+Full-featured refrigeration services website with hero, services, products, testimonials, orders, payments, contact, about page, admin panel, cart, and customer reviews. Dark theme with cyan accents and glass-card effects. Security trust badge exists above the order form.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Stronger Content Security Policy: remove `unsafe-eval`, tighten script-src
-- Additional meta security headers: X-Frame-Options SAMEONLY, X-Content-Type-Options nosniff, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy (disable camera/mic/geolocation unless needed)
-- Email obfuscation: encode coolrefrigeration318@gmail.com as HTML entities / split string in JS to prevent bot scraping
-- Enhanced sanitizeInput: handle additional XSS vectors (javascript:, data: URIs, event handlers)
-- Improved rate limiting: track submission attempts count, block after 3 rapid attempts, show countdown timer to user
-- CSRF token simulation: generate a session token in memory, validate on form submit
-- Encrypted localStorage: encode stored order/review data with base64+rotation cipher so raw data isn't plaintext in browser storage
-- Security Trust Badge section: visible HTTPS/encryption badge near footer or order form, reassuring customers
-- Input pattern validation: add regex patterns for email format, phone number format (10 digits Indian number), prevent script injection
-- DNS Prefetch Control: add X-DNS-Prefetch-Control off meta tag
-- Security status indicator in admin panel: show security stats (blocked bots, total submissions)
+- `ShieldNet` component: an animated SVG/CSS shield with hexagonal mesh network pattern, glowing cyan, with the label "Shield Net Protection Active". Placed in the hero section on the right side (desktop) as a floating visual element. On mobile it can be shown as a small centered element below hero stats.
+- Animated pulsing shield SVG with hex/honeycomb mesh lines radiating outward (net-like pattern)
+- Network nodes (small circles) connected by lines inside/around the shield
 
 ### Modify
-- index.html: strengthen CSP meta tag (remove unsafe-eval), add all security meta tags
-- sanitizeInput function: extend to strip dangerous protocols and patterns
-- Rate limit function: track attempt counts, not just timestamps
-- Admin panel: add security stats tab showing blocked attempts
+- Hero section: add the `ShieldNet` animated component to the right side of the hero on desktop (lg:flex two-column layout — text left, shield right)
 
 ### Remove
-- `unsafe-eval` from CSP script-src
-- `frame-src https://www.youtube.com` from CSP (video section was removed)
+- Nothing removed
 
 ## Implementation Plan
-1. Update index.html with hardened security headers and stronger CSP
-2. Enhance sanitizeInput utility to cover more attack vectors
-3. Upgrade rate limiting to count-based blocking with UI feedback
-4. Add CSRF token generation/validation pattern
-5. Add email obfuscation throughout the app
-6. Encrypt localStorage writes/reads for orders and reviews data
-7. Add a Security Trust Badge component near the order/payment section
-8. Add input pattern validation attributes and JS validation on forms
-9. Add security stats panel in admin view
-10. Add DNS prefetch control and permissions policy meta tags
+1. Create `ShieldNetAnimation` component using inline SVG + CSS animations (no external dependencies)
+   - Large shield shape (SVG path) with cyan glow effect
+   - Hexagonal/honeycomb mesh pattern inside the shield as SVG pattern
+   - Animated concentric pulse rings around the shield
+   - Floating network nodes (dots) connected by faint lines
+   - Label: "SHIELD NET" in uppercase cyan, "Protection Active" subtext with green dot
+2. Update Hero section layout to be two-column on large screens: left = existing text content, right = ShieldNetAnimation
+3. Add CSS keyframe animations (rotate-slow, pulse-ring, float-node) in index.css or as inline styles

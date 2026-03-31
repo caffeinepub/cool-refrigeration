@@ -1,3 +1,4 @@
+import { ShieldNetAnimation } from "@/components/ShieldNetAnimation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -734,12 +735,12 @@ function Hero() {
         </div>
       ))}
 
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-12 py-24 w-full">
+      <div className="relative max-w-7xl mx-auto px-6 lg:px-12 py-24 w-full flex flex-col lg:flex-row items-center justify-between gap-12">
         <motion.div
           initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.9, ease: "easeOut" }}
-          className="max-w-2xl"
+          className="max-w-2xl flex-shrink-0"
         >
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -847,6 +848,10 @@ function Hero() {
             ))}
           </motion.div>
         </motion.div>
+        {/* Shield Net Animation - right column */}
+        <div className="hidden lg:flex flex-1 items-center justify-center">
+          <ShieldNetAnimation />
+        </div>
       </div>
     </section>
   );
