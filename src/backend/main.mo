@@ -33,7 +33,8 @@ actor {
   let orders = Map.empty<Nat, Order>();
   var nextReviewId = 0;
   var nextOrderId = 0;
-  let adminPassword = "c00lRf3g!";
+  // Kept for upgrade compatibility — no longer used for authentication
+  let adminPassword = "";
 
   public shared ({ caller }) func submitReview(name : Text, stars : Nat, message : Text) : async Bool {
     if (stars < 1 or stars > 5) { return false };
@@ -68,17 +69,11 @@ actor {
     true;
   };
 
-  public query ({ caller }) func getAllReviews(password : Text) : async ?[Review] {
-    if (password != adminPassword) { return null };
-    ?reviews.values().toArray();
+  public query ({ caller }) func getAllReviews() : async [Review] {
+    reviews.values().toArray();
   };
 
-  public query ({ caller }) func getAllOrders(password : Text) : async ?[Order] {
-    if (password != adminPassword) { return null };
-    ?orders.values().toArray();
-  };
-
-  public query ({ caller }) func verifyAdmin(password : Text) : async Bool {
-    password == adminPassword;
+  public query ({ caller }) func getAllOrders() : async [Order] {
+    orders.values().toArray();
   };
 };

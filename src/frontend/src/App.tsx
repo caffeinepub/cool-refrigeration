@@ -47,7 +47,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { Lock, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
@@ -2913,39 +2913,20 @@ function formatTs(ns: bigint): string {
 
 function AdminPanel() {
   const { actor } = useActor();
-  const [password, setPassword] = useState("");
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [authError, setAuthError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [reviews, setReviews] = useState<AdminReview[]>([]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!actor) {
-      setAuthError("Connecting to server...");
-      return;
-    }
+  useEffect(() => {
+    if (!actor) return;
     setLoading(true);
-    setAuthError("");
-    try {
-      const ok = await actor.verifyAdmin(password);
-      if (ok) {
-        setLoggedIn(true);
-        const [ords, revs] = await Promise.all([
-          actor.getAllOrders(password),
-          actor.getAllReviews(password),
-        ]);
+    Promise.all([actor.getAllOrders(), actor.getAllReviews()])
+      .then(([ords, revs]) => {
         if (ords) setOrders(ords as AdminOrder[]);
         if (revs) setReviews(revs as AdminReview[]);
-      } else {
-        setAuthError("Incorrect password. Please try again.");
-      }
-    } catch {
-      setAuthError("Connection error. Please try again.");
-    }
-    setLoading(false);
-  };
+      })
+      .finally(() => setLoading(false));
+  }, [actor]);
 
   const bgStyle = { background: "oklch(0.12 0.04 250)", minHeight: "100vh" };
   const cardStyle = {
@@ -2953,102 +2934,6 @@ function AdminPanel() {
     border: "1px solid oklch(0.55 0.18 230 / 0.3)",
     borderRadius: "1rem",
   };
-  const inputStyle = {
-    background: "oklch(0.10 0.04 250)",
-    borderColor: "oklch(0.28 0.06 250)",
-    color: "white",
-  };
-
-  if (!loggedIn) {
-    return (
-      <div style={bgStyle} className="flex items-center justify-center p-6">
-        <div
-          style={{
-            ...cardStyle,
-            width: "100%",
-            maxWidth: "420px",
-            padding: "2.5rem",
-          }}
-        >
-          <div className="flex flex-col items-center gap-4 mb-8">
-            <div
-              className="w-14 h-14 rounded-full flex items-center justify-center"
-              style={{
-                background: "oklch(0.55 0.18 230 / 0.15)",
-                border: "1px solid oklch(0.55 0.18 230 / 0.4)",
-              }}
-            >
-              <Shield
-                className="w-7 h-7"
-                style={{ color: "oklch(0.75 0.14 220)" }}
-              />
-            </div>
-            <div className="text-center">
-              <h1
-                className="text-xl font-bold text-white"
-                style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
-              >
-                Admin Login
-              </h1>
-              <p
-                className="text-sm mt-1"
-                style={{ color: "oklch(0.55 0.04 250)" }}
-              >
-                Cool Refrigeration — Secure Area
-              </p>
-            </div>
-          </div>
-          <form onSubmit={handleLogin} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="admin-pw"
-                className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: "oklch(0.72 0.04 250)" }}
-              >
-                Password
-              </Label>
-              <div className="relative">
-                <Lock
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-                  style={{ color: "oklch(0.55 0.04 250)" }}
-                />
-                <Input
-                  id="admin-pw"
-                  type="password"
-                  placeholder="Enter admin password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  style={{ ...inputStyle, paddingLeft: "2.5rem" }}
-                  className="placeholder:text-[oklch(0.42_0.04_250)]"
-                />
-              </div>
-            </div>
-            {authError && (
-              <p
-                className="text-xs text-center"
-                style={{ color: "oklch(0.65 0.2 25)" }}
-              >
-                {authError}
-              </p>
-            )}
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full uppercase text-xs font-bold tracking-wider"
-              style={{
-                background: "oklch(0.55 0.18 230)",
-                color: "white",
-                boxShadow: "0 0 25px oklch(0.55 0.18 230 / 0.4)",
-              }}
-            >
-              {loading ? "Verifying..." : "Login"}
-            </Button>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div style={bgStyle} className="p-6">
@@ -3073,10 +2958,7 @@ function AdminPanel() {
           </div>
           <Button
             onClick={() => {
-              setLoggedIn(false);
-              setPassword("");
-              setOrders([]);
-              setReviews([]);
+              window.location.hash = "";
             }}
             variant="outline"
             className="text-xs uppercase tracking-wider"
@@ -3086,172 +2968,182 @@ function AdminPanel() {
               background: "transparent",
             }}
           >
-            Logout
+            Back to Site
           </Button>
         </div>
 
-        <Tabs defaultValue="orders">
-          <TabsList
-            style={{
-              background: "oklch(0.17 0.04 250)",
-              border: "1px solid oklch(0.55 0.18 230 / 0.2)",
-            }}
-            className="mb-6"
-          >
-            <TabsTrigger
-              value="orders"
-              className="text-xs uppercase tracking-wider data-[state=active]:text-white"
+        {loading ? (
+          <div className="flex items-center justify-center py-24">
+            <p className="text-sm" style={{ color: "oklch(0.55 0.04 250)" }}>
+              Loading...
+            </p>
+          </div>
+        ) : (
+          <Tabs defaultValue="orders">
+            <TabsList
+              style={{
+                background: "oklch(0.17 0.04 250)",
+                border: "1px solid oklch(0.55 0.18 230 / 0.2)",
+              }}
+              className="mb-6"
             >
-              Orders ({orders.length})
-            </TabsTrigger>
-            <TabsTrigger
-              value="reviews"
-              className="text-xs uppercase tracking-wider data-[state=active]:text-white"
-            >
-              Reviews ({reviews.length})
-            </TabsTrigger>
-          </TabsList>
+              <TabsTrigger
+                value="orders"
+                className="text-xs uppercase tracking-wider data-[state=active]:text-white"
+              >
+                Orders ({orders.length})
+              </TabsTrigger>
+              <TabsTrigger
+                value="reviews"
+                className="text-xs uppercase tracking-wider data-[state=active]:text-white"
+              >
+                Reviews ({reviews.length})
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="orders">
-            <div style={cardStyle} className="overflow-hidden">
-              {orders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16">
+            <TabsContent value="orders">
+              <div style={cardStyle} className="overflow-hidden">
+                {orders.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <p
+                      className="text-sm"
+                      style={{ color: "oklch(0.55 0.04 250)" }}
+                    >
+                      No orders yet
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow
+                          style={{ borderColor: "oklch(0.28 0.06 250)" }}
+                        >
+                          {[
+                            "Date/Time",
+                            "Name",
+                            "Phone",
+                            "Email",
+                            "Service",
+                            "Product",
+                            "Address",
+                            "Notes",
+                          ].map((h) => (
+                            <TableHead
+                              key={h}
+                              className="text-xs uppercase tracking-wider"
+                              style={{
+                                color: "oklch(0.75 0.14 220)",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {h}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {orders.map((o) => (
+                          <TableRow
+                            key={String(o.id)}
+                            style={{ borderColor: "oklch(0.22 0.04 250)" }}
+                          >
+                            <TableCell className="text-xs text-white whitespace-nowrap">
+                              {formatTs(o.timestamp)}
+                            </TableCell>
+                            <TableCell className="text-xs text-white">
+                              {o.name}
+                            </TableCell>
+                            <TableCell className="text-xs text-white whitespace-nowrap">
+                              {o.phone}
+                            </TableCell>
+                            <TableCell className="text-xs text-white">
+                              {o.email || "—"}
+                            </TableCell>
+                            <TableCell className="text-xs text-white whitespace-nowrap">
+                              {o.service_type}
+                            </TableCell>
+                            <TableCell className="text-xs text-white whitespace-nowrap">
+                              {o.product_interest || "—"}
+                            </TableCell>
+                            <TableCell className="text-xs text-white">
+                              {o.address}
+                            </TableCell>
+                            <TableCell className="text-xs text-white">
+                              {o.notes || "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="reviews">
+              {reviews.length === 0 ? (
+                <div
+                  style={cardStyle}
+                  className="flex flex-col items-center justify-center py-16"
+                >
                   <p
                     className="text-sm"
                     style={{ color: "oklch(0.55 0.04 250)" }}
                   >
-                    No orders yet
+                    No reviews yet
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow style={{ borderColor: "oklch(0.28 0.06 250)" }}>
-                        {[
-                          "Date/Time",
-                          "Name",
-                          "Phone",
-                          "Email",
-                          "Service",
-                          "Product",
-                          "Address",
-                          "Notes",
-                        ].map((h) => (
-                          <TableHead
-                            key={h}
-                            className="text-xs uppercase tracking-wider"
-                            style={{
-                              color: "oklch(0.75 0.14 220)",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {h}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {orders.map((o) => (
-                        <TableRow
-                          key={String(o.id)}
-                          style={{ borderColor: "oklch(0.22 0.04 250)" }}
-                        >
-                          <TableCell className="text-xs text-white whitespace-nowrap">
-                            {formatTs(o.timestamp)}
-                          </TableCell>
-                          <TableCell className="text-xs text-white">
-                            {o.name}
-                          </TableCell>
-                          <TableCell className="text-xs text-white whitespace-nowrap">
-                            {o.phone}
-                          </TableCell>
-                          <TableCell className="text-xs text-white">
-                            {o.email || "—"}
-                          </TableCell>
-                          <TableCell className="text-xs text-white whitespace-nowrap">
-                            {o.service_type}
-                          </TableCell>
-                          <TableCell className="text-xs text-white whitespace-nowrap">
-                            {o.product_interest || "—"}
-                          </TableCell>
-                          <TableCell className="text-xs text-white">
-                            {o.address}
-                          </TableCell>
-                          <TableCell className="text-xs text-white">
-                            {o.notes || "—"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {reviews.map((r) => (
+                    <div
+                      key={String(r.id)}
+                      style={cardStyle}
+                      className="p-5 flex flex-col gap-3"
+                    >
+                      <div className="flex items-start justify-between">
+                        <p className="font-semibold text-sm text-white">
+                          {r.name}
+                        </p>
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              className="w-3.5 h-3.5"
+                              style={{
+                                color:
+                                  s <= Number(r.stars)
+                                    ? "oklch(0.85 0.15 90)"
+                                    : "oklch(0.35 0.04 250)",
+                                fill:
+                                  s <= Number(r.stars)
+                                    ? "oklch(0.85 0.15 90)"
+                                    : "transparent",
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <p
+                        className="text-xs"
+                        style={{ color: "oklch(0.72 0.04 250)" }}
+                      >
+                        {r.message}
+                      </p>
+                      <p
+                        className="text-xs"
+                        style={{ color: "oklch(0.45 0.04 250)" }}
+                      >
+                        {formatTs(r.timestamp)}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="reviews">
-            {reviews.length === 0 ? (
-              <div
-                style={cardStyle}
-                className="flex flex-col items-center justify-center py-16"
-              >
-                <p
-                  className="text-sm"
-                  style={{ color: "oklch(0.55 0.04 250)" }}
-                >
-                  No reviews yet
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {reviews.map((r) => (
-                  <div
-                    key={String(r.id)}
-                    style={cardStyle}
-                    className="p-5 flex flex-col gap-3"
-                  >
-                    <div className="flex items-start justify-between">
-                      <p className="font-semibold text-sm text-white">
-                        {r.name}
-                      </p>
-                      <div className="flex gap-0.5">
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star
-                            key={s}
-                            className="w-3.5 h-3.5"
-                            style={{
-                              color:
-                                s <= Number(r.stars)
-                                  ? "oklch(0.85 0.15 90)"
-                                  : "oklch(0.35 0.04 250)",
-                              fill:
-                                s <= Number(r.stars)
-                                  ? "oklch(0.85 0.15 90)"
-                                  : "transparent",
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <p
-                      className="text-xs"
-                      style={{ color: "oklch(0.72 0.04 250)" }}
-                    >
-                      {r.message}
-                    </p>
-                    <p
-                      className="text-xs"
-                      style={{ color: "oklch(0.45 0.04 250)" }}
-                    >
-                      {formatTs(r.timestamp)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            </TabsContent>
+          </Tabs>
+        )}
       </div>
     </div>
   );

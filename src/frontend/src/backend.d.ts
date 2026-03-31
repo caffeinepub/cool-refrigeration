@@ -28,9 +28,8 @@ export interface Review {
     timestamp: Time;
 }
 export interface backendInterface {
-    getAllOrders(password: string): Promise<Array<Order> | null>;
-    getAllReviews(password: string): Promise<Array<Review> | null>;
+    getAllOrders(): Promise<Array<Order>>;
+    getAllReviews(): Promise<Array<Review>>;
     submitOrder(name: string, phone: string, email: string, service_type: string, product_interest: string, address: string, preferred_date: string, notes: string): Promise<boolean>;
     submitReview(name: string, stars: bigint, message: string): Promise<boolean>;
-    verifyAdmin(password: string): Promise<boolean>;
 }

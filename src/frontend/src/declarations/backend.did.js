@@ -30,8 +30,8 @@ export const Review = IDL.Record({
 });
 
 export const idlService = IDL.Service({
-  'getAllOrders' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Vec(Order))], ['query']),
-  'getAllReviews' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Vec(Review))], ['query']),
+  'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
+  'getAllReviews' : IDL.Func([], [IDL.Vec(Review)], ['query']),
   'submitOrder' : IDL.Func(
       [
         IDL.Text,
@@ -47,7 +47,6 @@ export const idlService = IDL.Service({
       [],
     ),
   'submitReview' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [IDL.Bool], []),
-  'verifyAdmin' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
 });
 
 export const idlInitArgs = [];
@@ -75,12 +74,8 @@ export const idlFactory = ({ IDL }) => {
   });
   
   return IDL.Service({
-    'getAllOrders' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Vec(Order))], ['query']),
-    'getAllReviews' : IDL.Func(
-        [IDL.Text],
-        [IDL.Opt(IDL.Vec(Review))],
-        ['query'],
-      ),
+    'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
+    'getAllReviews' : IDL.Func([], [IDL.Vec(Review)], ['query']),
     'submitOrder' : IDL.Func(
         [
           IDL.Text,
@@ -96,7 +91,6 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'submitReview' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [IDL.Bool], []),
-    'verifyAdmin' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
   });
 };
 

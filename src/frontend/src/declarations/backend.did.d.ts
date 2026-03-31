@@ -31,14 +31,13 @@ export interface Review {
 }
 export type Time = bigint;
 export interface _SERVICE {
-  'getAllOrders' : ActorMethod<[string], [] | [Array<Order>]>,
-  'getAllReviews' : ActorMethod<[string], [] | [Array<Review>]>,
+  'getAllOrders' : ActorMethod<[], Array<Order>>,
+  'getAllReviews' : ActorMethod<[], Array<Review>>,
   'submitOrder' : ActorMethod<
     [string, string, string, string, string, string, string, string],
     boolean
   >,
   'submitReview' : ActorMethod<[string, bigint, string], boolean>,
-  'verifyAdmin' : ActorMethod<[string], boolean>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];
