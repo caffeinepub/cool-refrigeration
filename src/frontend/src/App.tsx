@@ -47,7 +47,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { Shield } from "lucide-react";
+import { RefreshCw, Shield } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
@@ -2956,20 +2956,45 @@ function AdminPanel() {
               </p>
             </div>
           </div>
-          <Button
-            onClick={() => {
-              window.location.hash = "";
-            }}
-            variant="outline"
-            className="text-xs uppercase tracking-wider"
-            style={{
-              borderColor: "oklch(0.55 0.18 230 / 0.4)",
-              color: "oklch(0.75 0.14 220)",
-              background: "transparent",
-            }}
-          >
-            Back to Site
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                if (!actor) return;
+                setLoading(true);
+                Promise.all([actor.getAllOrders(), actor.getAllReviews()])
+                  .then(([ords, revs]) => {
+                    if (ords) setOrders(ords as AdminOrder[]);
+                    if (revs) setReviews(revs as AdminReview[]);
+                  })
+                  .finally(() => setLoading(false));
+              }}
+              variant="outline"
+              size="sm"
+              className="text-xs uppercase tracking-wider"
+              style={{
+                borderColor: "oklch(0.55 0.18 230 / 0.4)",
+                color: "oklch(0.75 0.14 220)",
+                background: "transparent",
+              }}
+            >
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Refresh
+            </Button>
+            <Button
+              onClick={() => {
+                window.location.hash = "";
+              }}
+              variant="outline"
+              className="text-xs uppercase tracking-wider"
+              style={{
+                borderColor: "oklch(0.55 0.18 230 / 0.4)",
+                color: "oklch(0.75 0.14 220)",
+                background: "transparent",
+              }}
+            >
+              Back to Site
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -3027,7 +3052,9 @@ function AdminPanel() {
                             "Service",
                             "Product",
                             "Address",
+                            "Preferred Date",
                             "Notes",
+                            "Actions",
                           ].map((h) => (
                             <TableHead
                               key={h}
@@ -3046,7 +3073,14 @@ function AdminPanel() {
                         {orders.map((o) => (
                           <TableRow
                             key={String(o.id)}
-                            style={{ borderColor: "oklch(0.22 0.04 250)" }}
+                            style={{
+                              borderColor: "oklch(0.22 0.04 250)",
+                              borderLeft:
+                                Date.now() - Number(o.timestamp / 1_000_000n) <
+                                86_400_000
+                                  ? "3px solid oklch(0.75 0.14 220)"
+                                  : "3px solid transparent",
+                            }}
                           >
                             <TableCell className="text-xs text-white whitespace-nowrap">
                               {formatTs(o.timestamp)}
@@ -3069,8 +3103,41 @@ function AdminPanel() {
                             <TableCell className="text-xs text-white">
                               {o.address}
                             </TableCell>
+                            <TableCell className="text-xs text-white whitespace-nowrap">
+                              {o.preferred_date || "—"}
+                            </TableCell>
                             <TableCell className="text-xs text-white">
                               {o.notes || "—"}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              <div className="flex items-center gap-1">
+                                <a
+                                  href={`tel:${o.phone}`}
+                                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs border transition-colors"
+                                  style={{
+                                    borderColor: "oklch(0.55 0.18 230 / 0.5)",
+                                    color: "oklch(0.75 0.14 220)",
+                                  }}
+                                  data-ocid="admin.order.call_button"
+                                >
+                                  <Phone className="w-3 h-3" />
+                                  Call
+                                </a>
+                                <a
+                                  href={`https://wa.me/91${o.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hi ${o.name}, your Cool Refrigeration ${o.service_type} service request has been received. We will contact you shortly.`)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs border transition-colors"
+                                  style={{
+                                    borderColor: "oklch(0.6 0.18 145 / 0.5)",
+                                    color: "oklch(0.75 0.18 145)",
+                                  }}
+                                  data-ocid="admin.order.whatsapp_button"
+                                >
+                                  <MessageCircle className="w-3 h-3" />
+                                  WhatsApp
+                                </a>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
