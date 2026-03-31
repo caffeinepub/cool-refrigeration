@@ -1,27 +1,27 @@
 # Cool Refrigeration
 
 ## Current State
-Full-featured refrigeration services website with hero, services, products, testimonials, orders, payments, contact, about page, admin panel, cart, and customer reviews. Dark theme with cyan accents and glass-card effects. Security trust badge exists above the order form.
+Security headers exist only as `<meta http-equiv>` tags in index.html. These are browser hints only — they are NOT enforced as real HTTP response headers at the server level. The .ic-assets.json5 config for the ICP asset canister does not exist yet.
 
 ## Requested Changes (Diff)
 
 ### Add
-- `ShieldNet` component: an animated SVG/CSS shield with hexagonal mesh network pattern, glowing cyan, with the label "Shield Net Protection Active". Placed in the hero section on the right side (desktop) as a floating visual element. On mobile it can be shown as a small centered element below hero stats.
-- Animated pulsing shield SVG with hex/honeycomb mesh lines radiating outward (net-like pattern)
-- Network nodes (small circles) connected by lines inside/around the shield
+- `.ic-assets.json5` in `src/frontend/public/` to set real HTTP response headers via the ICP asset canister for ALL served files
+- HSTS (Strict-Transport-Security) with max-age=31536000, includeSubDomains, preload — forces HTTPS always, strongest protection against DNS hijacking and SSL stripping
+- Cross-Origin-Opener-Policy: same-origin
+- Cross-Origin-Resource-Policy: same-origin
+- Referrer-Policy: strict-origin-when-cross-origin (server-level, not just meta)
+- X-DNS-Prefetch-Control: off (server-level)
+- X-Content-Type-Options: nosniff (server-level)
+- X-Frame-Options: SAMEORIGIN (server-level)
+- Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=() (server-level)
 
 ### Modify
-- Hero section: add the `ShieldNet` animated component to the right side of the hero on desktop (lg:flex two-column layout — text left, shield right)
+- `index.html`: Strengthen CSP to add `upgrade-insecure-requests` directive and add `form-action 'self'` to block form submissions to external domains
 
 ### Remove
 - Nothing removed
 
 ## Implementation Plan
-1. Create `ShieldNetAnimation` component using inline SVG + CSS animations (no external dependencies)
-   - Large shield shape (SVG path) with cyan glow effect
-   - Hexagonal/honeycomb mesh pattern inside the shield as SVG pattern
-   - Animated concentric pulse rings around the shield
-   - Floating network nodes (dots) connected by faint lines
-   - Label: "SHIELD NET" in uppercase cyan, "Protection Active" subtext with green dot
-2. Update Hero section layout to be two-column on large screens: left = existing text content, right = ShieldNetAnimation
-3. Add CSS keyframe animations (rotate-slow, pulse-ring, float-node) in index.css or as inline styles
+1. Create `src/frontend/public/.ic-assets.json5` with full security header config
+2. Update `index.html` CSP meta tag to include `upgrade-insecure-requests` and `form-action 'self'`
