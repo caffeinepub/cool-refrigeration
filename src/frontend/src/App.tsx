@@ -1649,7 +1649,7 @@ function OrderSection() {
     if (honeypot) {
       setForm(ORDER_FORM_INIT);
       setHoneypot("");
-      toast.success("Order placed! WhatsApp opened to notify the business.");
+      toast.success("Order placed! Our team will contact you soon.");
       return;
     }
     // Rate limit check
@@ -1701,30 +1701,6 @@ function OrderSection() {
       // Backend logging is non-fatal
     }
 
-    const msg = [
-      "🛒 *New Order - Cool Refrigeration*",
-      "",
-      `*Name:* ${safeName}`,
-      `*Phone:* ${safePhone}`,
-      `*Email:* ${safeEmail}`,
-      `*Service:* ${form.serviceType}`,
-      `*Product Interest:* ${form.productInterest}`,
-      `*Address:* ${safeAddress}`,
-      `*Preferred Date:* ${form.preferredDate}`,
-      safeNotes ? `*Notes:* ${safeNotes}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-
-    const waUrl = `https://wa.me/918276938625?text=${encodeURIComponent(msg)}`;
-    const waLink2 = document.createElement("a");
-    waLink2.href = waUrl;
-    waLink2.target = "_blank";
-    waLink2.rel = "noopener noreferrer";
-    document.body.appendChild(waLink2);
-    waLink2.click();
-    document.body.removeChild(waLink2);
-
     setForm(ORDER_FORM_INIT);
     setHoneypot("");
     setOrderConfirmed({
@@ -1733,7 +1709,7 @@ function OrderSection() {
       serviceType: form.serviceType,
       preferredDate: form.preferredDate,
     });
-    toast.success("Order placed! WhatsApp opened to notify the business.");
+    toast.success("Order placed! Our team will contact you soon.");
   };
 
   const inputStyle = {
@@ -2624,15 +2600,6 @@ function ChatSection() {
     }
     setSending(false);
 
-    const waText = `💬 New Chat Message - Cool Refrigeration\nName: ${safeName}\nSession: ${sessionId.slice(0, 8)}\nMessage: ${safeMsg}`;
-    const waLink = document.createElement("a");
-    waLink.href = `https://wa.me/918276938625?text=${encodeURIComponent(waText)}`;
-    waLink.target = "_blank";
-    waLink.rel = "noopener noreferrer";
-    document.body.appendChild(waLink);
-    waLink.click();
-    document.body.removeChild(waLink);
-
     setChatMessage("");
     await fetchMessages();
   };
@@ -3259,15 +3226,6 @@ function FloatingChat() {
       /* non-fatal */
     }
     setSending(false);
-
-    const waText = `💬 New Chat Message - Cool Refrigeration\nName: ${safeName}\nSession: ${sessionId.slice(0, 8)}\nMessage: ${safeMsg}`;
-    const waLink = document.createElement("a");
-    waLink.href = `https://wa.me/918276938625?text=${encodeURIComponent(waText)}`;
-    waLink.target = "_blank";
-    waLink.rel = "noopener noreferrer";
-    document.body.appendChild(waLink);
-    waLink.click();
-    document.body.removeChild(waLink);
 
     setChatMessage("");
     await fetchMessages();

@@ -1,11 +1,11 @@
 import Iter "mo:core/Iter";
 import Map "mo:core/Map";
-import Migration "migration";
+
 import Nat "mo:core/Nat";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 
-(with migration = Migration.run)
+
 actor {
   type Order = {
     id : Nat;
