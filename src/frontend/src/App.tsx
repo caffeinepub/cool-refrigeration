@@ -3892,10 +3892,12 @@ function AdminMessageCard({
   message,
   cardStyle,
   onReplied,
+  onDeleted,
 }: {
   message: AdminChatMessage;
   cardStyle: React.CSSProperties;
   onReplied: () => void;
+  onDeleted: () => void;
 }) {
   const { actor } = useActor();
   const [replyText, setReplyText] = useState("");
@@ -3944,12 +3946,29 @@ function AdminMessageCard({
             </p>
           </div>
         </div>
-        <p
-          className="text-xs flex-shrink-0"
-          style={{ color: "oklch(0.45 0.04 250)" }}
-        >
-          {formatTs(message.timestamp)}
-        </p>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <p className="text-xs" style={{ color: "oklch(0.45 0.04 250)" }}>
+            {formatTs(message.timestamp)}
+          </p>
+          <button
+            onClick={async () => {
+              if (!confirm("Delete this message?")) return;
+              if (!actor) return;
+              await (actor as any).deleteChatMessage(BigInt(message.id));
+              onDeleted();
+            }}
+            className="inline-flex items-center justify-center w-6 h-6 rounded transition-colors hover:bg-red-900/20"
+            style={{
+              color: "oklch(0.7 0.2 25)",
+              border: "1px solid oklch(0.55 0.2 25 / 0.4)",
+            }}
+            type="button"
+            title="Delete message"
+            data-ocid="admin.messages.delete_button"
+          >
+            <Trash2 className="w-3 h-3" />
+          </button>
+        </div>
       </div>
       <p
         className="text-xs leading-relaxed"
@@ -4274,6 +4293,27 @@ function AdminPanel() {
               </TabsList>
 
               <TabsContent value="orders">
+                <div className="flex justify-end mb-3">
+                  <button
+                    onClick={async () => {
+                      if (!confirm("Delete ALL orders? This cannot be undone."))
+                        return;
+                      if (!actor) return;
+                      await actor.clearAllOrders();
+                      const ords = await actor.getAllOrders();
+                      setOrders(ords as AdminOrder[]);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs border transition-colors hover:bg-red-900/20"
+                    style={{
+                      borderColor: "oklch(0.55 0.2 25 / 0.6)",
+                      color: "oklch(0.7 0.2 25)",
+                    }}
+                    type="button"
+                    data-ocid="admin.orders.delete_button"
+                  >
+                    🗑 Clear All Orders
+                  </button>
+                </div>
                 <div style={cardStyle} className="overflow-hidden">
                   {orders.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16">
@@ -4385,6 +4425,26 @@ function AdminPanel() {
                                     <MessageCircle className="w-3 h-3" />
                                     WhatsApp
                                   </a>
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm("Delete this order?"))
+                                        return;
+                                      if (!actor) return;
+                                      await actor.deleteOrder(BigInt(o.id));
+                                      setOrders((prev) =>
+                                        prev.filter((x) => x.id !== o.id),
+                                      );
+                                    }}
+                                    className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs border transition-colors hover:bg-red-900/20"
+                                    style={{
+                                      borderColor: "oklch(0.55 0.2 25 / 0.5)",
+                                      color: "oklch(0.7 0.2 25)",
+                                    }}
+                                    type="button"
+                                    data-ocid="admin.order.delete_button"
+                                  >
+                                    🗑 Delete
+                                  </button>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -4459,6 +4519,29 @@ function AdminPanel() {
               </TabsContent>
 
               <TabsContent value="messages">
+                <div className="flex justify-end mb-3">
+                  <button
+                    onClick={async () => {
+                      if (
+                        !confirm("Delete ALL messages? This cannot be undone.")
+                      )
+                        return;
+                      if (!actor) return;
+                      await (actor as any).clearAllChatMessages();
+                      const msgs = await actor.getAllChatMessages();
+                      setChatMessages(msgs as AdminChatMessage[]);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs border transition-colors hover:bg-red-900/20"
+                    style={{
+                      borderColor: "oklch(0.55 0.2 25 / 0.6)",
+                      color: "oklch(0.7 0.2 25)",
+                    }}
+                    type="button"
+                    data-ocid="admin.messages.delete_button"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Clear All Messages
+                  </button>
+                </div>
                 {chatMessages.length === 0 ? (
                   <div
                     style={cardStyle}
@@ -4484,6 +4567,13 @@ function AdminPanel() {
                         message={m}
                         cardStyle={cardStyle}
                         onReplied={() => {
+                          if (!actor) return;
+                          actor.getAllChatMessages().then((msgs) => {
+                            if (msgs)
+                              setChatMessages(msgs as AdminChatMessage[]);
+                          });
+                        }}
+                        onDeleted={() => {
                           if (!actor) return;
                           actor.getAllChatMessages().then((msgs) => {
                             if (msgs)

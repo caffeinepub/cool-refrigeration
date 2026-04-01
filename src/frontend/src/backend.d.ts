@@ -44,4 +44,8 @@ export interface backendInterface {
     sendChatMessage(name: string, sessionId: string, message: string): Promise<boolean>;
     submitOrder(name: string, phone: string, email: string, service_type: string, product_interest: string, address: string, preferred_date: string, notes: string): Promise<boolean>;
     submitReview(name: string, stars: bigint, message: string): Promise<boolean>;
+    deleteOrder(id: bigint): Promise<boolean>;
+    clearAllOrders(): Promise<boolean>;
+    deleteChatMessage(id: bigint): Promise<boolean>;
+    clearAllChatMessages(): Promise<boolean>;
 }

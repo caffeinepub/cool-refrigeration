@@ -63,6 +63,23 @@ actor {
     true;
   };
 
+  public shared ({ caller }) func deleteOrder(id : Nat) : async Bool {
+    switch (orders.get(id)) {
+      case (null) { false };
+      case (?_) {
+        ignore orders.remove(id);
+        true;
+      };
+    };
+  };
+
+  public shared ({ caller }) func clearAllOrders() : async Bool {
+    for (k in orders.keys().toArray().vals()) {
+      ignore orders.remove(k);
+    };
+    true;
+  };
+
   public shared ({ caller }) func submitReview(name : Text, stars : Nat, message : Text) : async Bool {
     if (stars < 1 or stars > 5) { return false };
 
@@ -102,6 +119,23 @@ actor {
         true;
       };
     };
+  };
+
+  public shared ({ caller }) func deleteChatMessage(id : Nat) : async Bool {
+    switch (chatMessages.get(id)) {
+      case (null) { false };
+      case (?_) {
+        ignore chatMessages.remove(id);
+        true;
+      };
+    };
+  };
+
+  public shared ({ caller }) func clearAllChatMessages() : async Bool {
+    for (k in chatMessages.keys().toArray().vals()) {
+      ignore chatMessages.remove(k);
+    };
+    true;
   };
 
   public query ({ caller }) func getAllOrders() : async [Order] {
