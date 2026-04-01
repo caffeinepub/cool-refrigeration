@@ -9,6 +9,12 @@
 import { IDL } from '@icp-sdk/core/candid';
 
 export const Time = IDL.Int;
+export const ChatMessage = IDL.Record({
+  'id' : IDL.Nat,
+  'name' : IDL.Text,
+  'message' : IDL.Text,
+  'timestamp' : Time,
+});
 export const Order = IDL.Record({
   'id' : IDL.Nat,
   'preferred_date' : IDL.Text,
@@ -30,8 +36,10 @@ export const Review = IDL.Record({
 });
 
 export const idlService = IDL.Service({
+  'getAllChatMessages' : IDL.Func([], [IDL.Vec(ChatMessage)], ['query']),
   'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
   'getAllReviews' : IDL.Func([], [IDL.Vec(Review)], ['query']),
+  'sendChatMessage' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
   'submitOrder' : IDL.Func(
       [
         IDL.Text,
@@ -53,6 +61,12 @@ export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
   const Time = IDL.Int;
+  const ChatMessage = IDL.Record({
+    'id' : IDL.Nat,
+    'name' : IDL.Text,
+    'message' : IDL.Text,
+    'timestamp' : Time,
+  });
   const Order = IDL.Record({
     'id' : IDL.Nat,
     'preferred_date' : IDL.Text,
@@ -74,8 +88,10 @@ export const idlFactory = ({ IDL }) => {
   });
   
   return IDL.Service({
+    'getAllChatMessages' : IDL.Func([], [IDL.Vec(ChatMessage)], ['query']),
     'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
     'getAllReviews' : IDL.Func([], [IDL.Vec(Review)], ['query']),
+    'sendChatMessage' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
     'submitOrder' : IDL.Func(
         [
           IDL.Text,

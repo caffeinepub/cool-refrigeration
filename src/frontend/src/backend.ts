@@ -89,6 +89,12 @@ export class ExternalBlob {
         return this;
     }
 }
+export interface ChatMessage {
+    id: bigint;
+    name: string;
+    message: string;
+    timestamp: Time;
+}
 export type Time = bigint;
 export interface Order {
     id: bigint;
@@ -110,40 +116,69 @@ export interface Review {
     timestamp: Time;
 }
 export interface backendInterface {
+    getAllChatMessages(): Promise<Array<ChatMessage>>;
     getAllOrders(): Promise<Array<Order>>;
     getAllReviews(): Promise<Array<Review>>;
+    sendChatMessage(name: string, message: string): Promise<boolean>;
     submitOrder(name: string, phone: string, email: string, service_type: string, product_interest: string, address: string, preferred_date: string, notes: string): Promise<boolean>;
     submitReview(name: string, stars: bigint, message: string): Promise<boolean>;
 }
-import type { Order as _Order, Review as _Review } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
+    async getAllChatMessages(): Promise<Array<ChatMessage>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllChatMessages();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllChatMessages();
+            return result;
+        }
+    }
     async getAllOrders(): Promise<Array<Order>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getAllOrders();
-                return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
+                return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getAllOrders();
-            return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
+            return result;
         }
     }
     async getAllReviews(): Promise<Array<Review>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getAllReviews();
-                return from_candid_vec_n2(this._uploadFile, this._downloadFile, result);
+                return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getAllReviews();
-            return from_candid_vec_n2(this._uploadFile, this._downloadFile, result);
+            return result;
+        }
+    }
+    async sendChatMessage(arg0: string, arg1: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.sendChatMessage(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.sendChatMessage(arg0, arg1);
+            return result;
         }
     }
     async submitOrder(arg0: string, arg1: string, arg2: string, arg3: string, arg4: string, arg5: string, arg6: string, arg7: string): Promise<boolean> {
@@ -174,19 +209,6 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-
-}
-function from_candid_opt_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [Array<_Order>]): Array<Order> | null {
-    return value.length === 0 ? null : value[0];
-}
-function from_candid_opt_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [Array<_Review>]): Array<Review> | null {
-    return value.length === 0 ? null : value[0];
-}
-function from_candid_vec_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Order>): Array<Order> {
-    return value as Array<Order>;
-}
-function from_candid_vec_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Review>): Array<Review> {
-    return value as Array<Review>;
 }
 export interface CreateActorOptions {
     agent?: Agent;

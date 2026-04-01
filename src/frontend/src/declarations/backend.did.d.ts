@@ -10,6 +10,12 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface ChatMessage {
+  'id' : bigint,
+  'name' : string,
+  'message' : string,
+  'timestamp' : Time,
+}
 export interface Order {
   'id' : bigint,
   'preferred_date' : string,
@@ -31,8 +37,10 @@ export interface Review {
 }
 export type Time = bigint;
 export interface _SERVICE {
+  'getAllChatMessages' : ActorMethod<[], Array<ChatMessage>>,
   'getAllOrders' : ActorMethod<[], Array<Order>>,
   'getAllReviews' : ActorMethod<[], Array<Review>>,
+  'sendChatMessage' : ActorMethod<[string, string], boolean>,
   'submitOrder' : ActorMethod<
     [string, string, string, string, string, string, string, string],
     boolean

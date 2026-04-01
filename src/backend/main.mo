@@ -1,12 +1,10 @@
+import Map "mo:core/Map";
+import Nat "mo:core/Nat";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
-import Nat "mo:core/Nat";
-import Iter "mo:core/Iter";
-import List "mo:core/List";
-import Map "mo:core/Map";
+import Migration "migration";
 
-
-
+(with migration = Migration.run)
 actor {
   type Review = {
     id : Nat;
@@ -29,12 +27,19 @@ actor {
     timestamp : Time.Time;
   };
 
+  type ChatMessage = {
+    id : Nat;
+    name : Text;
+    message : Text;
+    timestamp : Time.Time;
+  };
+
   let reviews = Map.empty<Nat, Review>();
   let orders = Map.empty<Nat, Order>();
+  let chatMessages = Map.empty<Nat, ChatMessage>();
   var nextReviewId = 0;
   var nextOrderId = 0;
-  // Kept for upgrade compatibility — no longer used for authentication
-  let adminPassword = "";
+  var nextChatId = 0;
 
   public shared ({ caller }) func submitReview(name : Text, stars : Nat, message : Text) : async Bool {
     if (stars < 1 or stars > 5) { return false };
@@ -69,11 +74,28 @@ actor {
     true;
   };
 
+  public shared ({ caller }) func sendChatMessage(name : Text, message : Text) : async Bool {
+    if (name.size() == 0 or message.size() == 0) { return false };
+    let chat : ChatMessage = {
+      id = nextChatId;
+      name;
+      message;
+      timestamp = Time.now();
+    };
+    chatMessages.add(nextChatId, chat);
+    nextChatId += 1;
+    true;
+  };
+
   public query ({ caller }) func getAllReviews() : async [Review] {
     reviews.values().toArray();
   };
 
   public query ({ caller }) func getAllOrders() : async [Order] {
     orders.values().toArray();
+  };
+
+  public query ({ caller }) func getAllChatMessages() : async [ChatMessage] {
+    chatMessages.values().toArray();
   };
 };

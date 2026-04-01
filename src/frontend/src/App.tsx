@@ -1625,6 +1625,12 @@ function OrderSection() {
   const [form, setForm] = useState(ORDER_FORM_INIT);
   const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [orderConfirmed, setOrderConfirmed] = useState<null | {
+    name: string;
+    phone: string;
+    serviceType: string;
+    preferredDate: string;
+  }>(null);
 
   const set = (key: keyof typeof ORDER_FORM_INIT) => (val: string) =>
     setForm((p) => ({ ...p, [key]: val }));
@@ -1713,6 +1719,12 @@ function OrderSection() {
 
     setForm(ORDER_FORM_INIT);
     setHoneypot("");
+    setOrderConfirmed({
+      name: safeName,
+      phone: safePhone,
+      serviceType: form.serviceType,
+      preferredDate: form.preferredDate,
+    });
     toast.success("Order placed! WhatsApp opened to notify the business.");
   };
 
@@ -1759,228 +1771,318 @@ function OrderSection() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="max-w-3xl mx-auto"
         >
-          <form
-            onSubmit={handleSubmit}
-            className="glass-card rounded-2xl p-8 flex flex-col gap-5"
-            style={{ boxShadow: "0 8px 50px oklch(0 0 0 / 0.5)" }}
-            data-ocid="order.panel"
-            data-csrf={SESSION_CSRF}
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          {orderConfirmed ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              className="glass-card rounded-2xl p-10 flex flex-col items-center gap-6 text-center"
+              style={{ boxShadow: "0 8px 50px oklch(0 0 0 / 0.5)" }}
+              data-ocid="order.success_state"
+            >
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center"
+                style={{
+                  background: "oklch(0.55 0.18 230 / 0.15)",
+                  border: "2px solid oklch(0.55 0.18 230 / 0.5)",
+                }}
+              >
+                <CheckCircle
+                  className="w-10 h-10"
+                  style={{ color: "oklch(0.75 0.14 220)" }}
+                />
+              </div>
+              <div>
+                <h3
+                  className="text-2xl font-bold text-white mb-2"
+                  style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+                >
+                  Order Received!
+                </h3>
+                <p
+                  className="text-sm mb-1"
+                  style={{ color: "oklch(0.72 0.04 250)" }}
+                >
+                  Thank you{" "}
+                  <span className="font-semibold text-white">
+                    {orderConfirmed.name}
+                  </span>
+                  ! Your{" "}
+                  <span
+                    className="font-semibold"
+                    style={{ color: "oklch(0.75 0.14 220)" }}
+                  >
+                    {orderConfirmed.serviceType}
+                  </span>{" "}
+                  request has been received. We'll contact you at{" "}
+                  <span className="font-semibold text-white">
+                    {orderConfirmed.phone}
+                  </span>{" "}
+                  to confirm your appointment.
+                </p>
+                {orderConfirmed.preferredDate && (
+                  <p
+                    className="text-xs mt-2"
+                    style={{ color: "oklch(0.6 0.04 250)" }}
+                  >
+                    Preferred date:{" "}
+                    <span className="font-semibold text-white">
+                      {orderConfirmed.preferredDate}
+                    </span>
+                  </p>
+                )}
+              </div>
+              <div
+                className="rounded-xl px-6 py-3 text-sm font-semibold"
+                style={{
+                  background: "oklch(0.55 0.18 230 / 0.12)",
+                  border: "1px solid oklch(0.55 0.18 230 / 0.3)",
+                  color: "oklch(0.75 0.14 220)",
+                }}
+              >
+                📱 WhatsApp notification sent to our team — we'll call you soon!
+              </div>
+              <Button
+                type="button"
+                onClick={() => setOrderConfirmed(null)}
+                variant="outline"
+                className="text-xs uppercase tracking-wider"
+                style={{
+                  borderColor: "oklch(0.55 0.18 230 / 0.5)",
+                  color: "oklch(0.75 0.14 220)",
+                  background: "transparent",
+                }}
+                data-ocid="order.secondary_button"
+              >
+                Place Another Order
+              </Button>
+            </motion.div>
+          ) : (
+            <form
+              onSubmit={handleSubmit}
+              className="glass-card rounded-2xl p-8 flex flex-col gap-5"
+              style={{ boxShadow: "0 8px 50px oklch(0 0 0 / 0.5)" }}
+              data-ocid="order.panel"
+              data-csrf={SESSION_CSRF}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-1.5">
+                  <Label
+                    htmlFor="order-name"
+                    className={labelCls}
+                    style={{ color: "oklch(0.72 0.04 250)" }}
+                  >
+                    Full Name *
+                  </Label>
+                  <Input
+                    id="order-name"
+                    placeholder="Your full name"
+                    value={form.name}
+                    onChange={(e) => set("name")(e.target.value)}
+                    required
+                    style={inputStyle}
+                    className="placeholder:text-[oklch(0.42_0.04_250)]"
+                    data-ocid="order.input"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label
+                    htmlFor="order-phone"
+                    className={labelCls}
+                    style={{ color: "oklch(0.72 0.04 250)" }}
+                  >
+                    Phone Number *
+                  </Label>
+                  <Input
+                    id="order-phone"
+                    type="tel"
+                    placeholder="+91 XXXXX XXXXX"
+                    value={form.phone}
+                    onChange={(e) => set("phone")(e.target.value)}
+                    required
+                    style={inputStyle}
+                    className="placeholder:text-[oklch(0.42_0.04_250)]"
+                    data-ocid="order.input"
+                  />
+                </div>
+              </div>
+
               <div className="flex flex-col gap-1.5">
                 <Label
-                  htmlFor="order-name"
+                  htmlFor="order-email"
                   className={labelCls}
                   style={{ color: "oklch(0.72 0.04 250)" }}
                 >
-                  Full Name *
+                  Email Address
                 </Label>
                 <Input
-                  id="order-name"
-                  placeholder="Your full name"
-                  value={form.name}
-                  onChange={(e) => set("name")(e.target.value)}
+                  id="order-email"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={form.email}
+                  onChange={(e) => set("email")(e.target.value)}
+                  style={inputStyle}
+                  className="placeholder:text-[oklch(0.42_0.04_250)]"
+                  data-ocid="order.input"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="flex flex-col gap-1.5">
+                  <Label
+                    className={labelCls}
+                    style={{ color: "oklch(0.72 0.04 250)" }}
+                  >
+                    Service Type *
+                  </Label>
+                  <Select
+                    value={form.serviceType}
+                    onValueChange={set("serviceType")}
+                    required
+                  >
+                    <SelectTrigger style={inputStyle} data-ocid="order.select">
+                      <SelectValue placeholder="Select a service" />
+                    </SelectTrigger>
+                    <SelectContent
+                      style={{
+                        background: "oklch(0.17 0.04 250)",
+                        borderColor: "oklch(0.28 0.06 250)",
+                      }}
+                    >
+                      <SelectItem value="ac-installation">
+                        AC Installation
+                      </SelectItem>
+                      <SelectItem value="ac-service">AC Service</SelectItem>
+                      <SelectItem value="fridge-repair">
+                        Fridge Repair
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label
+                    className={labelCls}
+                    style={{ color: "oklch(0.72 0.04 250)" }}
+                  >
+                    Product Interest
+                  </Label>
+                  <Select
+                    value={form.productInterest}
+                    onValueChange={set("productInterest")}
+                  >
+                    <SelectTrigger style={inputStyle} data-ocid="order.select">
+                      <SelectValue placeholder="Select a product" />
+                    </SelectTrigger>
+                    <SelectContent
+                      style={{
+                        background: "oklch(0.17 0.04 250)",
+                        borderColor: "oklch(0.28 0.06 250)",
+                      }}
+                    >
+                      <SelectItem value="window-ac">Window AC Unit</SelectItem>
+                      <SelectItem value="split-ac">Split AC</SelectItem>
+                      <SelectItem value="fridge-single">
+                        Fridge Single Door
+                      </SelectItem>
+                      <SelectItem value="fridge-double">
+                        Fridge Double Door
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label
+                  htmlFor="order-address"
+                  className={labelCls}
+                  style={{ color: "oklch(0.72 0.04 250)" }}
+                >
+                  Service Address *
+                </Label>
+                <Input
+                  id="order-address"
+                  placeholder="Your full address in Kolkata"
+                  value={form.address}
+                  onChange={(e) => set("address")(e.target.value)}
                   required
                   style={inputStyle}
                   className="placeholder:text-[oklch(0.42_0.04_250)]"
                   data-ocid="order.input"
                 />
               </div>
+
               <div className="flex flex-col gap-1.5">
                 <Label
-                  htmlFor="order-phone"
+                  htmlFor="order-date"
                   className={labelCls}
                   style={{ color: "oklch(0.72 0.04 250)" }}
                 >
-                  Phone Number *
+                  Preferred Date
                 </Label>
                 <Input
-                  id="order-phone"
-                  type="tel"
-                  placeholder="+91 XXXXX XXXXX"
-                  value={form.phone}
-                  onChange={(e) => set("phone")(e.target.value)}
-                  required
+                  id="order-date"
+                  type="date"
+                  value={form.preferredDate}
+                  onChange={(e) => set("preferredDate")(e.target.value)}
                   style={inputStyle}
-                  className="placeholder:text-[oklch(0.42_0.04_250)]"
                   data-ocid="order.input"
                 />
               </div>
-            </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="order-email"
-                className={labelCls}
-                style={{ color: "oklch(0.72 0.04 250)" }}
-              >
-                Email Address
-              </Label>
-              <Input
-                id="order-email"
-                type="email"
-                placeholder="your@email.com"
-                value={form.email}
-                onChange={(e) => set("email")(e.target.value)}
-                style={inputStyle}
-                className="placeholder:text-[oklch(0.42_0.04_250)]"
-                data-ocid="order.input"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="flex flex-col gap-1.5">
                 <Label
+                  htmlFor="order-notes"
                   className={labelCls}
                   style={{ color: "oklch(0.72 0.04 250)" }}
                 >
-                  Service Type *
+                  Additional Notes
                 </Label>
-                <Select
-                  value={form.serviceType}
-                  onValueChange={set("serviceType")}
-                  required
-                >
-                  <SelectTrigger style={inputStyle} data-ocid="order.select">
-                    <SelectValue placeholder="Select a service" />
-                  </SelectTrigger>
-                  <SelectContent
-                    style={{
-                      background: "oklch(0.17 0.04 250)",
-                      borderColor: "oklch(0.28 0.06 250)",
-                    }}
-                  >
-                    <SelectItem value="ac-installation">
-                      AC Installation
-                    </SelectItem>
-                    <SelectItem value="ac-service">AC Service</SelectItem>
-                    <SelectItem value="fridge-repair">Fridge Repair</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Textarea
+                  id="order-notes"
+                  rows={4}
+                  placeholder="Describe your issue or requirements in detail..."
+                  value={form.notes}
+                  onChange={(e) => set("notes")(e.target.value)}
+                  style={inputStyle}
+                  className="placeholder:text-[oklch(0.42_0.04_250)]"
+                  data-ocid="order.textarea"
+                />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  className={labelCls}
-                  style={{ color: "oklch(0.72 0.04 250)" }}
-                >
-                  Product Interest
-                </Label>
-                <Select
-                  value={form.productInterest}
-                  onValueChange={set("productInterest")}
-                >
-                  <SelectTrigger style={inputStyle} data-ocid="order.select">
-                    <SelectValue placeholder="Select a product" />
-                  </SelectTrigger>
-                  <SelectContent
-                    style={{
-                      background: "oklch(0.17 0.04 250)",
-                      borderColor: "oklch(0.28 0.06 250)",
-                    }}
-                  >
-                    <SelectItem value="window-ac">Window AC Unit</SelectItem>
-                    <SelectItem value="split-ac">Split AC</SelectItem>
-                    <SelectItem value="fridge-single">
-                      Fridge Single Door
-                    </SelectItem>
-                    <SelectItem value="fridge-double">
-                      Fridge Double Door
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="order-address"
-                className={labelCls}
-                style={{ color: "oklch(0.72 0.04 250)" }}
-              >
-                Service Address *
-              </Label>
-              <Input
-                id="order-address"
-                placeholder="Your full address in Kolkata"
-                value={form.address}
-                onChange={(e) => set("address")(e.target.value)}
-                required
-                style={inputStyle}
-                className="placeholder:text-[oklch(0.42_0.04_250)]"
-                data-ocid="order.input"
+              {/* Honeypot field - hidden from real users, catches bots */}
+              <input
+                type="text"
+                name="website"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                aria-hidden="true"
+                style={{ display: "none" }}
+                autoComplete="off"
               />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="order-date"
-                className={labelCls}
-                style={{ color: "oklch(0.72 0.04 250)" }}
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="uppercase text-xs font-bold tracking-wider w-full py-3 glow-btn transition-all duration-300"
+                style={{
+                  background: "oklch(0.55 0.18 230)",
+                  color: "white",
+                  boxShadow: "0 0 25px oklch(0.55 0.18 230 / 0.5)",
+                }}
+                data-ocid="order.submit_button"
               >
-                Preferred Date
-              </Label>
-              <Input
-                id="order-date"
-                type="date"
-                value={form.preferredDate}
-                onChange={(e) => set("preferredDate")(e.target.value)}
-                style={inputStyle}
-                data-ocid="order.input"
-              />
-            </div>
+                {submitting ? "Placing Order..." : "Place Order"}
+              </Button>
 
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="order-notes"
-                className={labelCls}
-                style={{ color: "oklch(0.72 0.04 250)" }}
+              <p
+                className="text-xs text-center"
+                style={{ color: "oklch(0.5 0.04 250)" }}
               >
-                Additional Notes
-              </Label>
-              <Textarea
-                id="order-notes"
-                rows={4}
-                placeholder="Describe your issue or requirements in detail..."
-                value={form.notes}
-                onChange={(e) => set("notes")(e.target.value)}
-                style={inputStyle}
-                className="placeholder:text-[oklch(0.42_0.04_250)]"
-                data-ocid="order.textarea"
-              />
-            </div>
-
-            {/* Honeypot field - hidden from real users, catches bots */}
-            <input
-              type="text"
-              name="website"
-              value={honeypot}
-              onChange={(e) => setHoneypot(e.target.value)}
-              tabIndex={-1}
-              aria-hidden="true"
-              style={{ display: "none" }}
-              autoComplete="off"
-            />
-            <Button
-              type="submit"
-              disabled={submitting}
-              className="uppercase text-xs font-bold tracking-wider w-full py-3 glow-btn transition-all duration-300"
-              style={{
-                background: "oklch(0.55 0.18 230)",
-                color: "white",
-                boxShadow: "0 0 25px oklch(0.55 0.18 230 / 0.5)",
-              }}
-              data-ocid="order.submit_button"
-            >
-              {submitting ? "Placing Order..." : "Place Order"}
-            </Button>
-
-            <p
-              className="text-xs text-center"
-              style={{ color: "oklch(0.5 0.04 250)" }}
-            >
-              We'll call you within 2 hours to confirm your booking.
-            </p>
-          </form>
+                We'll call you within 2 hours to confirm your booking.
+              </p>
+            </form>
+          )}
         </motion.div>
       </div>
     </section>
@@ -2580,6 +2682,281 @@ function Footer({ setPage }: { setPage: (p: "home" | "about") => void }) {
   );
 }
 
+// ─── Floating Chat Widget ─────────────────────────────────────────────────────
+function FloatingChat() {
+  const { actor } = useActor();
+  const [open, setOpen] = useState(false);
+  const [chatName, setChatName] = useState("");
+  const [chatMessage, setChatMessage] = useState("");
+  const [honeypot, setHoneypot] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (honeypot) {
+      setSent(true);
+      setTimeout(() => {
+        setSent(false);
+        setChatName("");
+        setChatMessage("");
+        setHoneypot("");
+      }, 3000);
+      return;
+    }
+    if (!checkRateLimit("chat_submit")) {
+      toast.error(
+        "Too many attempts. Please wait a minute before trying again.",
+      );
+      return;
+    }
+    const safeName = sanitizeInput(chatName.trim());
+    const safeMsg = sanitizeInput(chatMessage.trim());
+    if (!safeName || !safeMsg) {
+      toast.error("Please enter your name and message.");
+      return;
+    }
+    setSending(true);
+    try {
+      if (actor) {
+        await actor.sendChatMessage(safeName, safeMsg);
+      }
+    } catch {
+      // non-fatal
+    }
+    setSending(false);
+
+    const waText = `💬 New Chat Message - Cool Refrigeration\nName: ${safeName}\nMessage: ${safeMsg}`;
+    const waLink = document.createElement("a");
+    waLink.href = `https://wa.me/918276938625?text=${encodeURIComponent(waText)}`;
+    waLink.target = "_blank";
+    waLink.rel = "noopener noreferrer";
+    document.body.appendChild(waLink);
+    waLink.click();
+    document.body.removeChild(waLink);
+
+    setSent(true);
+    setTimeout(() => {
+      setSent(false);
+      setChatName("");
+      setChatMessage("");
+      setOpen(false);
+    }, 3000);
+  };
+
+  const inputStyle = {
+    background: "oklch(0.10 0.04 250)",
+    borderColor: "oklch(0.28 0.06 250)",
+    color: "white",
+  };
+
+  return (
+    <>
+      {/* Chat Panel */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            className="fixed z-50 w-80 rounded-2xl overflow-hidden shadow-2xl"
+            style={{
+              bottom: "6.5rem",
+              right: "1.5rem",
+              background: "oklch(0.17 0.04 250)",
+              border: "1px solid oklch(0.55 0.18 230 / 0.35)",
+              boxShadow:
+                "0 8px 40px oklch(0 0 0 / 0.6), 0 0 30px oklch(0.55 0.18 230 / 0.15)",
+            }}
+            data-ocid="chat.panel"
+          >
+            {/* Header */}
+            <div
+              className="flex items-center justify-between px-4 py-3"
+              style={{
+                background: "oklch(0.20 0.05 250)",
+                borderBottom: "1px solid oklch(0.55 0.18 230 / 0.2)",
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{
+                    background: "oklch(0.72 0.18 142)",
+                    boxShadow: "0 0 6px oklch(0.72 0.18 142)",
+                  }}
+                />
+                <span
+                  className="text-sm font-bold"
+                  style={{
+                    color: "white",
+                    fontFamily: "'Bricolage Grotesque', sans-serif",
+                  }}
+                >
+                  Chat with Us
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+                aria-label="Close chat"
+                data-ocid="chat.close_button"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-4">
+              {sent ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center gap-3 py-6 text-center"
+                  data-ocid="chat.success_state"
+                >
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center"
+                    style={{
+                      background: "oklch(0.55 0.18 230 / 0.15)",
+                      border: "2px solid oklch(0.55 0.18 230 / 0.5)",
+                    }}
+                  >
+                    <CheckCircle
+                      className="w-7 h-7"
+                      style={{ color: "oklch(0.75 0.14 220)" }}
+                    />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-white text-sm mb-1">
+                      Message Sent!
+                    </p>
+                    <p
+                      className="text-xs"
+                      style={{ color: "oklch(0.65 0.04 250)" }}
+                    >
+                      We'll reply on WhatsApp soon.
+                    </p>
+                  </div>
+                </motion.div>
+              ) : (
+                <form onSubmit={handleSend} className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="chat-name"
+                      className="text-xs font-semibold uppercase tracking-wider"
+                      style={{ color: "oklch(0.72 0.04 250)" }}
+                    >
+                      Your Name
+                    </label>
+                    <Input
+                      id="chat-name"
+                      placeholder="Enter your name"
+                      value={chatName}
+                      onChange={(e) => setChatName(e.target.value)}
+                      required
+                      style={inputStyle}
+                      className="text-sm placeholder:text-[oklch(0.42_0.04_250)]"
+                      data-ocid="chat.input"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="chat-message"
+                      className="text-xs font-semibold uppercase tracking-wider"
+                      style={{ color: "oklch(0.72 0.04 250)" }}
+                    >
+                      Message
+                    </label>
+                    <Textarea
+                      id="chat-message"
+                      rows={3}
+                      placeholder="How can we help you?"
+                      value={chatMessage}
+                      onChange={(e) => setChatMessage(e.target.value)}
+                      required
+                      style={inputStyle}
+                      className="text-sm placeholder:text-[oklch(0.42_0.04_250)] resize-none"
+                      data-ocid="chat.textarea"
+                    />
+                  </div>
+                  {/* Honeypot */}
+                  <input
+                    type="text"
+                    name="website_url"
+                    value={honeypot}
+                    onChange={(e) => setHoneypot(e.target.value)}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    style={{ display: "none" }}
+                    autoComplete="off"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={sending}
+                    className="w-full text-xs font-bold uppercase tracking-wider glow-btn transition-all duration-300"
+                    style={{
+                      background: "oklch(0.55 0.18 230)",
+                      color: "white",
+                      boxShadow: "0 0 20px oklch(0.55 0.18 230 / 0.4)",
+                    }}
+                    data-ocid="chat.submit_button"
+                  >
+                    {sending ? "Sending..." : "Send Message"}
+                  </Button>
+                </form>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Button */}
+      <motion.button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="fixed z-50 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300"
+        style={{
+          bottom: "5rem",
+          right: "1.5rem",
+          background: open ? "oklch(0.45 0.18 230)" : "oklch(0.55 0.18 230)",
+          boxShadow: "0 0 25px oklch(0.55 0.18 230 / 0.65)",
+        }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        aria-label={open ? "Close chat" : "Open chat"}
+        data-ocid="chat.open_modal_button"
+      >
+        <AnimatePresence mode="wait">
+          {open ? (
+            <motion.span
+              key="close"
+              initial={{ rotate: -90, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: 90, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <X className="w-5 h-5 text-white" />
+            </motion.span>
+          ) : (
+            <motion.span
+              key="chat"
+              initial={{ rotate: 90, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: -90, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <MessageCircle className="w-5 h-5 text-white" />
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.button>
+    </>
+  );
+}
+
 // ─── Back to Top ──────────────────────────────────────────────────────────────
 function BackToTop() {
   const [visible, setVisible] = useState(false);
@@ -3025,6 +3402,12 @@ interface AdminReview {
   message: string;
   timestamp: bigint;
 }
+interface AdminChatMessage {
+  id: bigint;
+  name: string;
+  message: string;
+  timestamp: bigint;
+}
 
 function formatTs(ns: bigint): string {
   const ms = Number(ns / 1_000_000n);
@@ -3042,14 +3425,20 @@ function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [reviews, setReviews] = useState<AdminReview[]>([]);
+  const [chatMessages, setChatMessages] = useState<AdminChatMessage[]>([]);
 
   useEffect(() => {
     if (!actor) return;
     setLoading(true);
-    Promise.all([actor.getAllOrders(), actor.getAllReviews()])
-      .then(([ords, revs]) => {
+    Promise.all([
+      actor.getAllOrders(),
+      actor.getAllReviews(),
+      actor.getAllChatMessages(),
+    ])
+      .then(([ords, revs, msgs]) => {
         if (ords) setOrders(ords as AdminOrder[]);
         if (revs) setReviews(revs as AdminReview[]);
+        if (msgs) setChatMessages(msgs as AdminChatMessage[]);
       })
       .finally(() => setLoading(false));
   }, [actor]);
@@ -3087,10 +3476,15 @@ function AdminPanel() {
               onClick={() => {
                 if (!actor) return;
                 setLoading(true);
-                Promise.all([actor.getAllOrders(), actor.getAllReviews()])
-                  .then(([ords, revs]) => {
+                Promise.all([
+                  actor.getAllOrders(),
+                  actor.getAllReviews(),
+                  actor.getAllChatMessages(),
+                ])
+                  .then(([ords, revs, msgs]) => {
                     if (ords) setOrders(ords as AdminOrder[]);
                     if (revs) setReviews(revs as AdminReview[]);
+                    if (msgs) setChatMessages(msgs as AdminChatMessage[]);
                   })
                   .finally(() => setLoading(false));
               }}
@@ -3217,6 +3611,21 @@ function AdminPanel() {
                 <p className="text-lg font-bold text-white">{reviews.length}</p>
               </div>
               <div
+                className="h-8 w-px"
+                style={{ background: "oklch(0.28 0.06 250)" }}
+              />
+              <div>
+                <p
+                  className="text-xs font-semibold uppercase tracking-wider mb-0.5"
+                  style={{ color: "oklch(0.75 0.14 220)" }}
+                >
+                  Total Messages
+                </p>
+                <p className="text-lg font-bold text-white">
+                  {chatMessages.length}
+                </p>
+              </div>
+              <div
                 className="h-8 w-px hidden sm:block"
                 style={{ background: "oklch(0.28 0.06 250)" }}
               />
@@ -3260,6 +3669,13 @@ function AdminPanel() {
                   className="text-xs uppercase tracking-wider data-[state=active]:text-white"
                 >
                   Reviews ({reviews.length})
+                </TabsTrigger>
+                <TabsTrigger
+                  value="messages"
+                  className="text-xs uppercase tracking-wider data-[state=active]:text-white"
+                  data-ocid="admin.tab"
+                >
+                  Messages ({chatMessages.length})
                 </TabsTrigger>
               </TabsList>
 
@@ -3447,6 +3863,84 @@ function AdminPanel() {
                   </div>
                 )}
               </TabsContent>
+
+              <TabsContent value="messages">
+                {chatMessages.length === 0 ? (
+                  <div
+                    style={cardStyle}
+                    className="flex flex-col items-center justify-center py-16"
+                    data-ocid="admin.messages.empty_state"
+                  >
+                    <MessageCircle
+                      className="w-8 h-8 mb-3"
+                      style={{ color: "oklch(0.45 0.04 250)" }}
+                    />
+                    <p
+                      className="text-sm"
+                      style={{ color: "oklch(0.55 0.04 250)" }}
+                    >
+                      No messages yet
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {chatMessages.map((m) => (
+                      <div
+                        key={String(m.id)}
+                        style={cardStyle}
+                        className="p-5 flex flex-col gap-3"
+                        data-ocid="admin.messages.card"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                              style={{
+                                background: "oklch(0.55 0.18 230 / 0.15)",
+                                border: "1px solid oklch(0.55 0.18 230 / 0.3)",
+                              }}
+                            >
+                              <MessageCircle
+                                className="w-4 h-4"
+                                style={{ color: "oklch(0.75 0.14 220)" }}
+                              />
+                            </div>
+                            <p className="font-semibold text-sm text-white">
+                              {m.name}
+                            </p>
+                          </div>
+                          <p
+                            className="text-xs flex-shrink-0"
+                            style={{ color: "oklch(0.45 0.04 250)" }}
+                          >
+                            {formatTs(m.timestamp)}
+                          </p>
+                        </div>
+                        <p
+                          className="text-xs leading-relaxed"
+                          style={{ color: "oklch(0.72 0.04 250)" }}
+                        >
+                          {m.message}
+                        </p>
+                        <a
+                          href={`https://wa.me/918276938625?text=${encodeURIComponent(`Hi ${m.name}, thank you for reaching out to Cool Refrigeration! `)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 self-start rounded px-3 py-1.5 text-xs border transition-colors"
+                          style={{
+                            borderColor: "oklch(0.6 0.18 145 / 0.5)",
+                            color: "oklch(0.75 0.18 145)",
+                          }}
+                          data-ocid="admin.messages.whatsapp_button"
+                        >
+                          <MessageCircle className="w-3 h-3" />
+                          Reply on WhatsApp
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
             </Tabs>
           </>
         )}
@@ -3513,6 +4007,7 @@ export default function App() {
           </main>
         )}
         <Footer setPage={setPage} />
+        <FloatingChat />
         <BackToTop />
       </div>
     </CartProvider>
