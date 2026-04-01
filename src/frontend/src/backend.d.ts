@@ -12,6 +12,8 @@ export interface ChatMessage {
     name: string;
     message: string;
     timestamp: Time;
+    sessionId: string;
+    reply?: string;
 }
 export type Time = bigint;
 export interface Order {
@@ -37,7 +39,9 @@ export interface backendInterface {
     getAllChatMessages(): Promise<Array<ChatMessage>>;
     getAllOrders(): Promise<Array<Order>>;
     getAllReviews(): Promise<Array<Review>>;
-    sendChatMessage(name: string, message: string): Promise<boolean>;
+    getChatMessagesBySession(sessionId: string): Promise<Array<ChatMessage>>;
+    replyToChat(id: bigint, reply: string): Promise<boolean>;
+    sendChatMessage(name: string, sessionId: string, message: string): Promise<boolean>;
     submitOrder(name: string, phone: string, email: string, service_type: string, product_interest: string, address: string, preferred_date: string, notes: string): Promise<boolean>;
     submitReview(name: string, stars: bigint, message: string): Promise<boolean>;
 }

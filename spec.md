@@ -1,35 +1,33 @@
 # Cool Refrigeration
 
 ## Current State
-- Landing page with hero, services, products, order form, payment, owner section, cart, reviews, and About Us subpage
-- Backend has submitOrder, submitReview, getAllOrders, getAllReviews
-- Admin panel (no password) shows orders and reviews
-- WhatsApp notifications sent on order/cart submit
-- Shield Net animation in hero, security features live
+The site has a one-way floating chat widget (bottom-right). Customers can send a name + message which is stored in the backend and notified via WhatsApp to the owner. The admin panel has a Messages tab where the owner can view all chat messages. There is no two-way chat capability, no reply from owner back to customer visible on the site, and no dedicated chat section on the page.
+
+Backend currently supports:
+- `sendChatMessage(name, message) -> boolean`
+- `getAllChatMessages() -> Array<ChatMessage>`
+ChatMessage has: id, name, message, timestamp
 
 ## Requested Changes (Diff)
 
 ### Add
-- **Chat Widget**: Floating chat button (bottom-right corner) customers can click to open a chat window on the website
-  - Customer enters their name and message
-  - Message stored in backend via new `sendChatMessage` call
-  - WhatsApp notification sent to +918276938625 with chat message details
-  - Chat window shows a confirmation after message is sent
-- **Admin Chat Tab**: New "Messages" tab in the admin panel showing all chat messages (name, message, timestamp)
-- **In-page Order Confirmation**: After placing an order, show a visible on-page order summary card (name, service, date, phone) in addition to existing toast
-- Backend: `ChatMessage` type + `sendChatMessage(name, message)` + `getAllChatMessages()` query
+- `reply: opt Text` field to ChatMessage in the backend
+- `replyToChat(id: Nat, reply: Text) -> Bool` backend method
+- A session ID (generated client-side, stored in localStorage) attached to each chat message so the widget can poll only that customer's messages
+- `getChatMessagesBySession(sessionId: Text) -> Array<ChatMessage>` backend method
+- Two-way chat in the floating widget: shows the conversation thread (customer messages + owner replies), auto-polls every 5s for replies after sending
+- A dedicated "Chat With Us" section on the main page (above the footer), showing the same chat interface embedded inline
+- Admin panel: reply input box next to each message so owner can type and send a reply; replied messages show a green checkmark
 
 ### Modify
-- Admin panel: add third tab "Messages" to existing Orders + Reviews tabs
-- Order section: add inline order confirmation panel that appears after successful submission
+- Existing `sendChatMessage` to accept a sessionId parameter: `sendChatMessage(name, sessionId, message) -> Bool`
+- ChatMessage struct to include `sessionId: Text` and `reply: opt Text`
 
 ### Remove
 - Nothing removed
 
 ## Implementation Plan
-1. Update `main.mo` to add ChatMessage type, sendChatMessage function, getAllChatMessages query
-2. Update backend.d.ts with new ChatMessage interface and functions
-3. Add floating chat widget component in App.tsx (bottom-right floating button, slide-up chat panel, name + message fields, send button)
-4. Wire chat widget to call backend `sendChatMessage` and open WhatsApp with message details
-5. Add "Messages" tab to AdminPanel component showing all chat messages
-6. Enhance order section with inline order confirmation card after submit
+1. Regenerate Motoko backend with updated ChatMessage struct and new methods
+2. Update floating chat widget: session ID, conversation thread view, 5s polling for replies
+3. Add dedicated chat section on the landing page (above footer)
+4. Update admin panel Messages tab: show reply input, submit reply via replyToChat, show replied status

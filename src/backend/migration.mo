@@ -1,16 +1,8 @@
 import Map "mo:core/Map";
 import Nat "mo:core/Nat";
-import Text "mo:core/Text";
+import Time "mo:core/Time";
 
 module {
-  type Review = {
-    id : Nat;
-    name : Text;
-    stars : Nat;
-    message : Text;
-    timestamp : Int;
-  };
-
   type Order = {
     id : Nat;
     name : Text;
@@ -21,41 +13,67 @@ module {
     address : Text;
     preferred_date : Text;
     notes : Text;
-    timestamp : Int;
+    timestamp : Time.Time;
   };
 
-  type ChatMessage = {
+  type Review = {
+    id : Nat;
+    name : Text;
+    stars : Nat;
+    message : Text;
+    timestamp : Time.Time;
+  };
+
+  type OldChatMessage = {
     id : Nat;
     name : Text;
     message : Text;
-    timestamp : Int;
+    timestamp : Time.Time;
+  };
+
+  type NewChatMessage = {
+    id : Nat;
+    name : Text;
+    sessionId : Text;
+    message : Text;
+    timestamp : Time.Time;
+    reply : ?Text;
   };
 
   type OldActor = {
-    reviews : Map.Map<Nat, Review>;
     orders : Map.Map<Nat, Order>;
-    nextReviewId : Nat;
+    reviews : Map.Map<Nat, Review>;
+    chatMessages : Map.Map<Nat, OldChatMessage>;
     nextOrderId : Nat;
-    adminPassword : Text;
+    nextReviewId : Nat;
+    nextChatId : Nat;
   };
 
   type NewActor = {
-    reviews : Map.Map<Nat, Review>;
     orders : Map.Map<Nat, Order>;
-    chatMessages : Map.Map<Nat, ChatMessage>;
-    nextReviewId : Nat;
+    reviews : Map.Map<Nat, Review>;
+    chatMessages : Map.Map<Nat, NewChatMessage>;
     nextOrderId : Nat;
+    nextReviewId : Nat;
     nextChatId : Nat;
   };
 
   public func run(old : OldActor) : NewActor {
+    let newChatMessages = old.chatMessages.map<Nat, OldChatMessage, NewChatMessage>(
+      func(_id, oldChat) {
+        {
+          id = oldChat.id;
+          name = oldChat.name;
+          sessionId = "";
+          message = oldChat.message;
+          timestamp = oldChat.timestamp;
+          reply = null;
+        };
+      }
+    );
     {
-      reviews = old.reviews;
-      orders = old.orders;
-      chatMessages = Map.empty<Nat, ChatMessage>();
-      nextReviewId = old.nextReviewId;
-      nextOrderId = old.nextOrderId;
-      nextChatId = 0;
+      old with
+      chatMessages = newChatMessages;
     };
   };
 };

@@ -14,6 +14,8 @@ export const ChatMessage = IDL.Record({
   'name' : IDL.Text,
   'message' : IDL.Text,
   'timestamp' : Time,
+  'sessionId' : IDL.Text,
+  'reply' : IDL.Opt(IDL.Text),
 });
 export const Order = IDL.Record({
   'id' : IDL.Nat,
@@ -39,7 +41,13 @@ export const idlService = IDL.Service({
   'getAllChatMessages' : IDL.Func([], [IDL.Vec(ChatMessage)], ['query']),
   'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
   'getAllReviews' : IDL.Func([], [IDL.Vec(Review)], ['query']),
-  'sendChatMessage' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+  'getChatMessagesBySession' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(ChatMessage)],
+      ['query'],
+    ),
+  'replyToChat' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Bool], []),
+  'sendChatMessage' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [IDL.Bool], []),
   'submitOrder' : IDL.Func(
       [
         IDL.Text,
@@ -66,6 +74,8 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'message' : IDL.Text,
     'timestamp' : Time,
+    'sessionId' : IDL.Text,
+    'reply' : IDL.Opt(IDL.Text),
   });
   const Order = IDL.Record({
     'id' : IDL.Nat,
@@ -91,7 +101,17 @@ export const idlFactory = ({ IDL }) => {
     'getAllChatMessages' : IDL.Func([], [IDL.Vec(ChatMessage)], ['query']),
     'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
     'getAllReviews' : IDL.Func([], [IDL.Vec(Review)], ['query']),
-    'sendChatMessage' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+    'getChatMessagesBySession' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(ChatMessage)],
+        ['query'],
+      ),
+    'replyToChat' : IDL.Func([IDL.Nat, IDL.Text], [IDL.Bool], []),
+    'sendChatMessage' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Bool],
+        [],
+      ),
     'submitOrder' : IDL.Func(
         [
           IDL.Text,

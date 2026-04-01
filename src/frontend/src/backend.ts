@@ -94,6 +94,8 @@ export interface ChatMessage {
     name: string;
     message: string;
     timestamp: Time;
+    sessionId: string;
+    reply?: string;
 }
 export type Time = bigint;
 export interface Order {
@@ -119,24 +121,27 @@ export interface backendInterface {
     getAllChatMessages(): Promise<Array<ChatMessage>>;
     getAllOrders(): Promise<Array<Order>>;
     getAllReviews(): Promise<Array<Review>>;
-    sendChatMessage(name: string, message: string): Promise<boolean>;
+    getChatMessagesBySession(sessionId: string): Promise<Array<ChatMessage>>;
+    replyToChat(id: bigint, reply: string): Promise<boolean>;
+    sendChatMessage(name: string, sessionId: string, message: string): Promise<boolean>;
     submitOrder(name: string, phone: string, email: string, service_type: string, product_interest: string, address: string, preferred_date: string, notes: string): Promise<boolean>;
     submitReview(name: string, stars: bigint, message: string): Promise<boolean>;
 }
+import type { ChatMessage as _ChatMessage, Time as _Time } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async getAllChatMessages(): Promise<Array<ChatMessage>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getAllChatMessages();
-                return result;
+                return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getAllChatMessages();
-            return result;
+            return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
         }
     }
     async getAllOrders(): Promise<Array<Order>> {
@@ -167,17 +172,45 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async sendChatMessage(arg0: string, arg1: string): Promise<boolean> {
+    async getChatMessagesBySession(arg0: string): Promise<Array<ChatMessage>> {
         if (this.processError) {
             try {
-                const result = await this.actor.sendChatMessage(arg0, arg1);
+                const result = await this.actor.getChatMessagesBySession(arg0);
+                return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getChatMessagesBySession(arg0);
+            return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async replyToChat(arg0: bigint, arg1: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.replyToChat(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.sendChatMessage(arg0, arg1);
+            const result = await this.actor.replyToChat(arg0, arg1);
+            return result;
+        }
+    }
+    async sendChatMessage(arg0: string, arg1: string, arg2: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.sendChatMessage(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.sendChatMessage(arg0, arg1, arg2);
             return result;
         }
     }
@@ -209,6 +242,39 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+}
+function from_candid_ChatMessage_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ChatMessage): ChatMessage {
+    return from_candid_record_n3(_uploadFile, _downloadFile, value);
+}
+function from_candid_opt_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_record_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: bigint;
+    name: string;
+    message: string;
+    timestamp: _Time;
+    sessionId: string;
+    reply: [] | [string];
+}): {
+    id: bigint;
+    name: string;
+    message: string;
+    timestamp: Time;
+    sessionId: string;
+    reply?: string;
+} {
+    return {
+        id: value.id,
+        name: value.name,
+        message: value.message,
+        timestamp: value.timestamp,
+        sessionId: value.sessionId,
+        reply: record_opt_to_undefined(from_candid_opt_n4(_uploadFile, _downloadFile, value.reply))
+    };
+}
+function from_candid_vec_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_ChatMessage>): Array<ChatMessage> {
+    return value.map((x)=>from_candid_ChatMessage_n2(_uploadFile, _downloadFile, x));
 }
 export interface CreateActorOptions {
     agent?: Agent;

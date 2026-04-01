@@ -48,10 +48,18 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { RefreshCw, Shield } from "lucide-react";
+import { Loader2, RefreshCw, Send, Shield } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import type React from "react";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 // ─── Security Utilities ────────────────────────────────────────────────────────
@@ -2536,6 +2544,370 @@ function ContactSection() {
   );
 }
 
+// ─── Chat Section ─────────────────────────────────────────────────────────────
+function ChatSection() {
+  const { actor } = useActor();
+  const [chatName, setChatName] = useState(
+    () => localStorage.getItem("coolref_chat_name") || "",
+  );
+  const [nameInput, setNameInput] = useState("");
+  const [chatMessage, setChatMessage] = useState("");
+  const [honeypot, setHoneypot] = useState("");
+  const [sending, setSending] = useState(false);
+  const [messages, setMessages] = useState<
+    Array<{
+      id: bigint;
+      name: string;
+      message: string;
+      reply?: string;
+      timestamp: bigint;
+      sessionId: string;
+    }>
+  >([]);
+  const [loadingMsgs, setLoadingMsgs] = useState(false);
+  const sessionId = useMemo(() => getOrCreateSession(), []);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  const fetchMessages = useCallback(async () => {
+    if (!actor) return;
+    try {
+      const msgs = await actor.getChatMessagesBySession(sessionId);
+      setMessages(msgs as typeof messages);
+    } catch {
+      /* non-fatal */
+    }
+  }, [actor, sessionId]);
+
+  useEffect(() => {
+    if (!actor) return;
+    setLoadingMsgs(true);
+    fetchMessages().finally(() => setLoadingMsgs(false));
+    const interval = setInterval(fetchMessages, 5000);
+    return () => clearInterval(interval);
+  }, [actor, fetchMessages]);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []); // eslint-disable-next-line
+
+  const handleSetName = (e: React.FormEvent) => {
+    e.preventDefault();
+    const safe = sanitizeInput(nameInput.trim());
+    if (!safe) return;
+    setChatName(safe);
+    localStorage.setItem("coolref_chat_name", safe);
+    setNameInput("");
+  };
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (honeypot) return;
+    if (!checkRateLimit("chat_section_submit")) {
+      toast.error(
+        "Too many attempts. Please wait a minute before trying again.",
+      );
+      return;
+    }
+    const safeName = sanitizeInput(chatName.trim());
+    const safeMsg = sanitizeInput(chatMessage.trim());
+    if (!safeName || !safeMsg) {
+      toast.error("Please enter your name and message.");
+      return;
+    }
+    setSending(true);
+    try {
+      if (actor) {
+        await actor.sendChatMessage(safeName, sessionId, safeMsg);
+      }
+    } catch {
+      /* non-fatal */
+    }
+    setSending(false);
+
+    const waText = `💬 New Chat Message - Cool Refrigeration\nName: ${safeName}\nSession: ${sessionId.slice(0, 8)}\nMessage: ${safeMsg}`;
+    const waLink = document.createElement("a");
+    waLink.href = `https://wa.me/918276938625?text=${encodeURIComponent(waText)}`;
+    waLink.target = "_blank";
+    waLink.rel = "noopener noreferrer";
+    document.body.appendChild(waLink);
+    waLink.click();
+    document.body.removeChild(waLink);
+
+    setChatMessage("");
+    await fetchMessages();
+  };
+
+  const inputStyle = {
+    background: "oklch(0.12 0.04 250)",
+    borderColor: "oklch(0.28 0.06 250)",
+    color: "white",
+  };
+
+  return (
+    <section
+      id="chat-section"
+      className="py-20 px-4"
+      style={{ background: "oklch(0.13 0.04 250)" }}
+    >
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-10">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{
+                background: "oklch(0.55 0.18 230 / 0.15)",
+                border: "1px solid oklch(0.72 0.22 230 / 0.4)",
+              }}
+            >
+              <MessageCircle
+                className="w-4 h-4"
+                style={{ color: "oklch(0.72 0.22 230)" }}
+              />
+            </div>
+            <h2
+              className="text-3xl font-extrabold text-white"
+              style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+            >
+              Chat With Us{" "}
+              <span style={{ color: "oklch(0.72 0.22 230)" }}>Directly</span>
+            </h2>
+          </div>
+          <p className="text-sm" style={{ color: "oklch(0.60 0.04 250)" }}>
+            Get instant answers about our services
+          </p>
+        </div>
+
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{
+            background: "oklch(0.17 0.04 250)",
+            border: "1px solid oklch(0.55 0.18 230 / 0.25)",
+            boxShadow:
+              "0 8px 40px oklch(0 0 0 / 0.4), 0 0 40px oklch(0.55 0.18 230 / 0.08)",
+          }}
+        >
+          {/* Chat header */}
+          <div
+            className="px-6 py-4 flex items-center gap-3"
+            style={{
+              background: "oklch(0.20 0.05 250)",
+              borderBottom: "1px solid oklch(0.55 0.18 230 / 0.2)",
+            }}
+          >
+            <div
+              className="w-2.5 h-2.5 rounded-full"
+              style={{
+                background: "oklch(0.72 0.18 142)",
+                boxShadow: "0 0 8px oklch(0.72 0.18 142)",
+              }}
+            />
+            <span
+              className="text-sm font-bold text-white"
+              style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+            >
+              Cool Refrigeration — Live Chat
+            </span>
+            {chatName && (
+              <span
+                className="ml-auto text-xs"
+                style={{ color: "oklch(0.55 0.04 250)" }}
+              >
+                Chatting as{" "}
+                <span style={{ color: "oklch(0.72 0.22 230)" }}>
+                  {chatName}
+                </span>
+              </span>
+            )}
+          </div>
+
+          {!chatName ? (
+            <div className="p-8">
+              <form
+                onSubmit={handleSetName}
+                className="flex flex-col gap-4 max-w-sm mx-auto text-center"
+              >
+                <MessageCircle
+                  className="w-10 h-10 mx-auto opacity-30"
+                  style={{ color: "oklch(0.72 0.22 230)" }}
+                />
+                <p className="text-sm font-medium text-white">
+                  What's your name to get started?
+                </p>
+                <Input
+                  placeholder="Enter your name"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  required
+                  style={inputStyle}
+                  className="text-sm placeholder:text-[oklch(0.42_0.04_250)]"
+                  data-ocid="chat_section.input"
+                />
+                <Button
+                  type="submit"
+                  className="font-bold uppercase tracking-wider"
+                  style={{
+                    background: "oklch(0.55 0.18 230)",
+                    color: "white",
+                    boxShadow: "0 0 20px oklch(0.55 0.18 230 / 0.4)",
+                  }}
+                  data-ocid="chat_section.submit_button"
+                >
+                  Start Chatting
+                </Button>
+              </form>
+            </div>
+          ) : (
+            <>
+              {/* Message thread */}
+              <div
+                className="p-6 overflow-y-auto flex flex-col gap-4"
+                style={{ minHeight: "280px", maxHeight: "400px" }}
+                data-ocid="chat_section.panel"
+              >
+                {loadingMsgs ? (
+                  <div
+                    className="flex items-center justify-center py-10"
+                    data-ocid="chat_section.loading_state"
+                  >
+                    <div className="flex gap-1.5">
+                      {[0, 1, 2].map((i) => (
+                        <div
+                          key={i}
+                          className="w-2 h-2 rounded-full animate-bounce"
+                          style={{
+                            background: "oklch(0.72 0.22 230)",
+                            animationDelay: `${i * 0.15}s`,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div
+                    className="flex flex-col items-center gap-3 py-10 text-center"
+                    data-ocid="chat_section.empty_state"
+                  >
+                    <MessageCircle
+                      className="w-10 h-10 opacity-20"
+                      style={{ color: "oklch(0.72 0.22 230)" }}
+                    />
+                    <p
+                      className="text-sm"
+                      style={{ color: "oklch(0.50 0.04 250)" }}
+                    >
+                      No messages yet. Say hello! 👋
+                    </p>
+                  </div>
+                ) : (
+                  messages.map((m) => (
+                    <div key={String(m.id)} className="flex flex-col gap-2">
+                      <div className="flex justify-end">
+                        <div
+                          className="max-w-[70%] rounded-2xl rounded-tr-sm px-4 py-2.5"
+                          style={{
+                            background: "oklch(0.55 0.18 230 / 0.2)",
+                            border: "1px solid oklch(0.72 0.22 230 / 0.3)",
+                          }}
+                        >
+                          <p
+                            className="text-xs font-semibold mb-1"
+                            style={{ color: "oklch(0.72 0.22 230)" }}
+                          >
+                            {m.name}
+                          </p>
+                          <p className="text-sm text-white leading-relaxed">
+                            {m.message}
+                          </p>
+                        </div>
+                      </div>
+                      {m.reply ? (
+                        <div className="flex justify-start">
+                          <div
+                            className="max-w-[70%] rounded-2xl rounded-tl-sm px-4 py-2.5"
+                            style={{
+                              background: "oklch(0.20 0.05 250)",
+                              border: "1px solid oklch(0.35 0.06 250)",
+                            }}
+                          >
+                            <p
+                              className="text-xs font-semibold mb-1"
+                              style={{ color: "oklch(0.65 0.12 145)" }}
+                            >
+                              Cool Refrigeration
+                            </p>
+                            <p className="text-sm text-white leading-relaxed">
+                              {m.reply}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex justify-start pl-2">
+                          <p
+                            className="text-xs italic"
+                            style={{ color: "oklch(0.42 0.04 250)" }}
+                          >
+                            Waiting for reply...
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+                <div ref={endRef} />
+              </div>
+
+              {/* Input area */}
+              <div
+                className="px-6 pb-6 pt-3"
+                style={{ borderTop: "1px solid oklch(0.25 0.06 250)" }}
+              >
+                <form onSubmit={handleSend} className="flex gap-3">
+                  <input
+                    type="text"
+                    name="website_url"
+                    value={honeypot}
+                    onChange={(e) => setHoneypot(e.target.value)}
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    style={{ display: "none" }}
+                    autoComplete="off"
+                  />
+                  <Input
+                    placeholder="Type your message..."
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    required
+                    style={inputStyle}
+                    className="text-sm placeholder:text-[oklch(0.42_0.04_250)] flex-1"
+                    data-ocid="chat_section.textarea"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={sending}
+                    className="font-bold px-5"
+                    style={{
+                      background: "oklch(0.55 0.18 230)",
+                      color: "white",
+                      boxShadow: "0 0 16px oklch(0.55 0.18 230 / 0.4)",
+                    }}
+                    data-ocid="chat_section.submit_button"
+                  >
+                    {sending ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </Button>
+                </form>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Footer ───────────────────────────────────────────────────────────────────
 function Footer({ setPage }: { setPage: (p: "home" | "about") => void }) {
   return (
@@ -2683,27 +3055,189 @@ function Footer({ setPage }: { setPage: (p: "home" | "about") => void }) {
 }
 
 // ─── Floating Chat Widget ─────────────────────────────────────────────────────
+function getOrCreateSession(): string {
+  let sid = localStorage.getItem("coolref_chat_session");
+  if (!sid) {
+    sid = crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem("coolref_chat_session", sid);
+  }
+  return sid;
+}
+
+function ChatThread({
+  messages,
+  loading,
+}: {
+  messages: Array<{
+    id: bigint;
+    name: string;
+    message: string;
+    reply?: string;
+    timestamp: bigint;
+    sessionId: string;
+  }>;
+  loading: boolean;
+}) {
+  const endRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []); // eslint-disable-next-line
+
+  if (loading) {
+    return (
+      <div
+        className="flex items-center justify-center py-8"
+        data-ocid="chat.loading_state"
+      >
+        <div className="flex gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="w-2 h-2 rounded-full animate-bounce"
+              style={{
+                background: "oklch(0.72 0.22 230)",
+                animationDelay: `${i * 0.15}s`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (messages.length === 0) {
+    return (
+      <div
+        className="flex flex-col items-center gap-2 py-8 text-center"
+        data-ocid="chat.empty_state"
+      >
+        <MessageCircle
+          className="w-8 h-8 opacity-30"
+          style={{ color: "oklch(0.72 0.22 230)" }}
+        />
+        <p className="text-xs" style={{ color: "oklch(0.52 0.04 250)" }}>
+          Send a message to start the conversation
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex flex-col gap-3 overflow-y-auto"
+      style={{ maxHeight: "260px" }}
+    >
+      {messages.map((m) => (
+        <div key={String(m.id)} className="flex flex-col gap-1.5">
+          {/* Customer message (right) */}
+          <div className="flex justify-end">
+            <div
+              className="max-w-[80%] rounded-2xl rounded-tr-sm px-3 py-2"
+              style={{
+                background: "oklch(0.55 0.18 230 / 0.25)",
+                border: "1px solid oklch(0.72 0.22 230 / 0.3)",
+              }}
+            >
+              <p
+                className="text-xs font-semibold mb-0.5"
+                style={{ color: "oklch(0.72 0.22 230)" }}
+              >
+                {m.name}
+              </p>
+              <p className="text-xs text-white leading-relaxed">{m.message}</p>
+            </div>
+          </div>
+          {/* Reply (left) */}
+          {m.reply ? (
+            <div className="flex justify-start">
+              <div
+                className="max-w-[80%] rounded-2xl rounded-tl-sm px-3 py-2"
+                style={{
+                  background: "oklch(0.20 0.05 250)",
+                  border: "1px solid oklch(0.35 0.06 250)",
+                }}
+              >
+                <p
+                  className="text-xs font-semibold mb-0.5"
+                  style={{ color: "oklch(0.65 0.10 145)" }}
+                >
+                  Cool Refrigeration
+                </p>
+                <p className="text-xs text-white leading-relaxed">{m.reply}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-start pl-2">
+              <p
+                className="text-xs italic"
+                style={{ color: "oklch(0.45 0.04 250)" }}
+              >
+                Waiting for reply...
+              </p>
+            </div>
+          )}
+        </div>
+      ))}
+      <div ref={endRef} />
+    </div>
+  );
+}
+
 function FloatingChat() {
   const { actor } = useActor();
   const [open, setOpen] = useState(false);
-  const [chatName, setChatName] = useState("");
+  const [chatName, setChatName] = useState(
+    () => localStorage.getItem("coolref_chat_name") || "",
+  );
+  const [nameInput, setNameInput] = useState("");
   const [chatMessage, setChatMessage] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [messages, setMessages] = useState<
+    Array<{
+      id: bigint;
+      name: string;
+      message: string;
+      reply?: string;
+      timestamp: bigint;
+      sessionId: string;
+    }>
+  >([]);
+  const [loadingMsgs, setLoadingMsgs] = useState(false);
+  const sessionId = useMemo(() => getOrCreateSession(), []);
+
+  const fetchMessages = useCallback(async () => {
+    if (!actor) return;
+    try {
+      const msgs = await actor.getChatMessagesBySession(sessionId);
+      setMessages(msgs as typeof messages);
+    } catch {
+      /* non-fatal */
+    }
+  }, [actor, sessionId]);
+
+  useEffect(() => {
+    if (!open || !actor) return;
+    setLoadingMsgs(true);
+    fetchMessages().finally(() => setLoadingMsgs(false));
+    const interval = setInterval(fetchMessages, 5000);
+    return () => clearInterval(interval);
+  }, [open, actor, fetchMessages]);
+
+  const handleSetName = (e: React.FormEvent) => {
+    e.preventDefault();
+    const safe = sanitizeInput(nameInput.trim());
+    if (!safe) return;
+    setChatName(safe);
+    localStorage.setItem("coolref_chat_name", safe);
+    setNameInput("");
+  };
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (honeypot) {
-      setSent(true);
-      setTimeout(() => {
-        setSent(false);
-        setChatName("");
-        setChatMessage("");
-        setHoneypot("");
-      }, 3000);
-      return;
-    }
+    if (honeypot) return;
     if (!checkRateLimit("chat_submit")) {
       toast.error(
         "Too many attempts. Please wait a minute before trying again.",
@@ -2719,14 +3253,14 @@ function FloatingChat() {
     setSending(true);
     try {
       if (actor) {
-        await actor.sendChatMessage(safeName, safeMsg);
+        await actor.sendChatMessage(safeName, sessionId, safeMsg);
       }
     } catch {
-      // non-fatal
+      /* non-fatal */
     }
     setSending(false);
 
-    const waText = `💬 New Chat Message - Cool Refrigeration\nName: ${safeName}\nMessage: ${safeMsg}`;
+    const waText = `💬 New Chat Message - Cool Refrigeration\nName: ${safeName}\nSession: ${sessionId.slice(0, 8)}\nMessage: ${safeMsg}`;
     const waLink = document.createElement("a");
     waLink.href = `https://wa.me/918276938625?text=${encodeURIComponent(waText)}`;
     waLink.target = "_blank";
@@ -2735,13 +3269,8 @@ function FloatingChat() {
     waLink.click();
     document.body.removeChild(waLink);
 
-    setSent(true);
-    setTimeout(() => {
-      setSent(false);
-      setChatName("");
-      setChatMessage("");
-      setOpen(false);
-    }, 3000);
+    setChatMessage("");
+    await fetchMessages();
   };
 
   const inputStyle = {
@@ -2809,104 +3338,83 @@ function FloatingChat() {
             </div>
 
             {/* Body */}
-            <div className="p-4">
-              {sent ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center gap-3 py-6 text-center"
-                  data-ocid="chat.success_state"
-                >
-                  <div
-                    className="w-14 h-14 rounded-full flex items-center justify-center"
-                    style={{
-                      background: "oklch(0.55 0.18 230 / 0.15)",
-                      border: "2px solid oklch(0.55 0.18 230 / 0.5)",
-                    }}
+            <div className="p-4 flex flex-col gap-3">
+              {!chatName ? (
+                <form onSubmit={handleSetName} className="flex flex-col gap-3">
+                  <p
+                    className="text-xs text-center"
+                    style={{ color: "oklch(0.65 0.04 250)" }}
                   >
-                    <CheckCircle
-                      className="w-7 h-7"
-                      style={{ color: "oklch(0.75 0.14 220)" }}
-                    />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-white text-sm mb-1">
-                      Message Sent!
-                    </p>
-                    <p
-                      className="text-xs"
-                      style={{ color: "oklch(0.65 0.04 250)" }}
-                    >
-                      We'll reply on WhatsApp soon.
-                    </p>
-                  </div>
-                </motion.div>
-              ) : (
-                <form onSubmit={handleSend} className="flex flex-col gap-3">
-                  <div className="flex flex-col gap-1">
-                    <label
-                      htmlFor="chat-name"
-                      className="text-xs font-semibold uppercase tracking-wider"
-                      style={{ color: "oklch(0.72 0.04 250)" }}
-                    >
-                      Your Name
-                    </label>
-                    <Input
-                      id="chat-name"
-                      placeholder="Enter your name"
-                      value={chatName}
-                      onChange={(e) => setChatName(e.target.value)}
-                      required
-                      style={inputStyle}
-                      className="text-sm placeholder:text-[oklch(0.42_0.04_250)]"
-                      data-ocid="chat.input"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label
-                      htmlFor="chat-message"
-                      className="text-xs font-semibold uppercase tracking-wider"
-                      style={{ color: "oklch(0.72 0.04 250)" }}
-                    >
-                      Message
-                    </label>
-                    <Textarea
-                      id="chat-message"
-                      rows={3}
-                      placeholder="How can we help you?"
-                      value={chatMessage}
-                      onChange={(e) => setChatMessage(e.target.value)}
-                      required
-                      style={inputStyle}
-                      className="text-sm placeholder:text-[oklch(0.42_0.04_250)] resize-none"
-                      data-ocid="chat.textarea"
-                    />
-                  </div>
-                  {/* Honeypot */}
-                  <input
-                    type="text"
-                    name="website_url"
-                    value={honeypot}
-                    onChange={(e) => setHoneypot(e.target.value)}
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    style={{ display: "none" }}
-                    autoComplete="off"
+                    What's your name?
+                  </p>
+                  <Input
+                    placeholder="Enter your name"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    required
+                    style={inputStyle}
+                    className="text-sm placeholder:text-[oklch(0.42_0.04_250)]"
+                    data-ocid="chat.input"
                   />
                   <Button
                     type="submit"
-                    disabled={sending}
-                    className="w-full text-xs font-bold uppercase tracking-wider glow-btn transition-all duration-300"
+                    className="w-full text-xs font-bold uppercase tracking-wider"
                     style={{
                       background: "oklch(0.55 0.18 230)",
                       color: "white",
-                      boxShadow: "0 0 20px oklch(0.55 0.18 230 / 0.4)",
                     }}
                     data-ocid="chat.submit_button"
                   >
-                    {sending ? "Sending..." : "Send Message"}
+                    Start Chat
                   </Button>
                 </form>
+              ) : (
+                <>
+                  <ChatThread messages={messages} loading={loadingMsgs} />
+                  <div
+                    className="border-t pt-3"
+                    style={{ borderColor: "oklch(0.28 0.06 250)" }}
+                  >
+                    <form onSubmit={handleSend} className="flex gap-2">
+                      <input
+                        type="text"
+                        name="website_url"
+                        value={honeypot}
+                        onChange={(e) => setHoneypot(e.target.value)}
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        style={{ display: "none" }}
+                        autoComplete="off"
+                      />
+                      <Input
+                        placeholder="Type a message..."
+                        value={chatMessage}
+                        onChange={(e) => setChatMessage(e.target.value)}
+                        required
+                        style={inputStyle}
+                        className="text-sm placeholder:text-[oklch(0.42_0.04_250)] flex-1"
+                        data-ocid="chat.textarea"
+                      />
+                      <Button
+                        type="submit"
+                        disabled={sending}
+                        size="sm"
+                        style={{
+                          background: "oklch(0.55 0.18 230)",
+                          color: "white",
+                          flexShrink: 0,
+                        }}
+                        data-ocid="chat.submit_button"
+                      >
+                        {sending ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Send className="w-3 h-3" />
+                        )}
+                      </Button>
+                    </form>
+                  </div>
+                </>
               )}
             </div>
           </motion.div>
@@ -2916,23 +3424,23 @@ function FloatingChat() {
       {/* Floating Button */}
       <motion.button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="fixed z-50 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300"
-        style={{
-          bottom: "5rem",
-          right: "1.5rem",
-          background: open ? "oklch(0.45 0.18 230)" : "oklch(0.55 0.18 230)",
-          boxShadow: "0 0 25px oklch(0.55 0.18 230 / 0.65)",
-        }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
+        onClick={() => setOpen((v) => !v)}
+        className="fixed z-50 w-14 h-14 rounded-full flex items-center justify-center glow-btn shadow-2xl"
+        style={{
+          bottom: "1.5rem",
+          right: "1.5rem",
+          background: "oklch(0.55 0.18 230)",
+          boxShadow: "0 0 30px oklch(0.55 0.18 230 / 0.6)",
+        }}
         aria-label={open ? "Close chat" : "Open chat"}
         data-ocid="chat.open_modal_button"
       >
         <AnimatePresence mode="wait">
           {open ? (
             <motion.span
-              key="close"
+              key="x"
               initial={{ rotate: -90, opacity: 0 }}
               animate={{ rotate: 0, opacity: 1 }}
               exit={{ rotate: 90, opacity: 0 }}
@@ -3405,8 +3913,10 @@ interface AdminReview {
 interface AdminChatMessage {
   id: bigint;
   name: string;
+  sessionId: string;
   message: string;
   timestamp: bigint;
+  reply?: string;
 }
 
 function formatTs(ns: bigint): string {
@@ -3418,6 +3928,132 @@ function formatTs(ns: bigint): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function AdminMessageCard({
+  message,
+  cardStyle,
+  onReplied,
+}: {
+  message: AdminChatMessage;
+  cardStyle: React.CSSProperties;
+  onReplied: () => void;
+}) {
+  const { actor } = useActor();
+  const [replyText, setReplyText] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const handleReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const safe = replyText.trim();
+    if (!safe || !actor) return;
+    setSending(true);
+    try {
+      await actor.replyToChat(message.id, safe);
+      toast.success("Reply sent!");
+      setReplyText("");
+      onReplied();
+    } catch {
+      toast.error("Failed to send reply.");
+    }
+    setSending(false);
+  };
+
+  return (
+    <div
+      style={cardStyle}
+      className="p-5 flex flex-col gap-3"
+      data-ocid="admin.messages.card"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{
+              background: "oklch(0.55 0.18 230 / 0.15)",
+              border: "1px solid oklch(0.55 0.18 230 / 0.3)",
+            }}
+          >
+            <MessageCircle
+              className="w-4 h-4"
+              style={{ color: "oklch(0.75 0.14 220)" }}
+            />
+          </div>
+          <div>
+            <p className="font-semibold text-sm text-white">{message.name}</p>
+            <p className="text-xs" style={{ color: "oklch(0.45 0.04 250)" }}>
+              Session: {message.sessionId.slice(0, 8)}...
+            </p>
+          </div>
+        </div>
+        <p
+          className="text-xs flex-shrink-0"
+          style={{ color: "oklch(0.45 0.04 250)" }}
+        >
+          {formatTs(message.timestamp)}
+        </p>
+      </div>
+      <p
+        className="text-xs leading-relaxed"
+        style={{ color: "oklch(0.72 0.04 250)" }}
+      >
+        {message.message}
+      </p>
+      {message.reply ? (
+        <div
+          className="rounded-lg p-3 flex flex-col gap-1"
+          style={{
+            background: "oklch(0.65 0.12 145 / 0.08)",
+            border: "1px solid oklch(0.65 0.12 145 / 0.3)",
+          }}
+        >
+          <div className="flex items-center gap-1.5">
+            <CheckCircle
+              className="w-3 h-3"
+              style={{ color: "oklch(0.65 0.12 145)" }}
+            />
+            <span
+              className="text-xs font-semibold"
+              style={{ color: "oklch(0.65 0.12 145)" }}
+            >
+              Replied
+            </span>
+          </div>
+          <p className="text-xs text-white leading-relaxed">{message.reply}</p>
+        </div>
+      ) : (
+        <form
+          onSubmit={handleReply}
+          className="flex gap-2"
+          data-ocid="admin.messages.row"
+        >
+          <Input
+            placeholder="Type a reply..."
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            required
+            className="text-xs flex-1"
+            style={{
+              background: "oklch(0.10 0.04 250)",
+              borderColor: "oklch(0.28 0.06 250)",
+              color: "white",
+            }}
+            data-ocid="admin.messages.input"
+          />
+          <Button
+            type="submit"
+            size="sm"
+            disabled={sending}
+            className="text-xs"
+            style={{ background: "oklch(0.55 0.18 230)", color: "white" }}
+            data-ocid="admin.messages.submit_button"
+          >
+            {sending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Send"}
+          </Button>
+        </form>
+      )}
+    </div>
+  );
 }
 
 function AdminPanel() {
@@ -3885,58 +4521,18 @@ function AdminPanel() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {chatMessages.map((m) => (
-                      <div
+                      <AdminMessageCard
                         key={String(m.id)}
-                        style={cardStyle}
-                        className="p-5 flex flex-col gap-3"
-                        data-ocid="admin.messages.card"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                              style={{
-                                background: "oklch(0.55 0.18 230 / 0.15)",
-                                border: "1px solid oklch(0.55 0.18 230 / 0.3)",
-                              }}
-                            >
-                              <MessageCircle
-                                className="w-4 h-4"
-                                style={{ color: "oklch(0.75 0.14 220)" }}
-                              />
-                            </div>
-                            <p className="font-semibold text-sm text-white">
-                              {m.name}
-                            </p>
-                          </div>
-                          <p
-                            className="text-xs flex-shrink-0"
-                            style={{ color: "oklch(0.45 0.04 250)" }}
-                          >
-                            {formatTs(m.timestamp)}
-                          </p>
-                        </div>
-                        <p
-                          className="text-xs leading-relaxed"
-                          style={{ color: "oklch(0.72 0.04 250)" }}
-                        >
-                          {m.message}
-                        </p>
-                        <a
-                          href={`https://wa.me/918276938625?text=${encodeURIComponent(`Hi ${m.name}, thank you for reaching out to Cool Refrigeration! `)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 self-start rounded px-3 py-1.5 text-xs border transition-colors"
-                          style={{
-                            borderColor: "oklch(0.6 0.18 145 / 0.5)",
-                            color: "oklch(0.75 0.18 145)",
-                          }}
-                          data-ocid="admin.messages.whatsapp_button"
-                        >
-                          <MessageCircle className="w-3 h-3" />
-                          Reply on WhatsApp
-                        </a>
-                      </div>
+                        message={m}
+                        cardStyle={cardStyle}
+                        onReplied={() => {
+                          if (!actor) return;
+                          actor.getAllChatMessages().then((msgs) => {
+                            if (msgs)
+                              setChatMessages(msgs as AdminChatMessage[]);
+                          });
+                        }}
+                      />
                     ))}
                   </div>
                 )}
@@ -4004,6 +4600,7 @@ export default function App() {
             <OrderSection />
             <PaymentSection />
             <ContactSection />
+            <ChatSection />
           </main>
         )}
         <Footer setPage={setPage} />

@@ -15,6 +15,8 @@ export interface ChatMessage {
   'name' : string,
   'message' : string,
   'timestamp' : Time,
+  'sessionId' : string,
+  'reply' : [] | [string],
 }
 export interface Order {
   'id' : bigint,
@@ -40,7 +42,9 @@ export interface _SERVICE {
   'getAllChatMessages' : ActorMethod<[], Array<ChatMessage>>,
   'getAllOrders' : ActorMethod<[], Array<Order>>,
   'getAllReviews' : ActorMethod<[], Array<Review>>,
-  'sendChatMessage' : ActorMethod<[string, string], boolean>,
+  'getChatMessagesBySession' : ActorMethod<[string], Array<ChatMessage>>,
+  'replyToChat' : ActorMethod<[bigint, string], boolean>,
+  'sendChatMessage' : ActorMethod<[string, string, string], boolean>,
   'submitOrder' : ActorMethod<
     [string, string, string, string, string, string, string, string],
     boolean
