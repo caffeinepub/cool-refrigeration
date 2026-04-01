@@ -541,7 +541,7 @@ function Header({ setPage }: { setPage: (p: "home" | "about") => void }) {
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handler, { passive: true });
+    window.addEventListener("scroll", handler);
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
@@ -749,7 +749,6 @@ function Hero() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.9, ease: "easeOut" }}
           className="max-w-2xl flex-shrink-0"
-          style={{ willChange: "transform, opacity" }}
         >
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -983,8 +982,6 @@ function OwnerSection() {
             <img
               src="/assets/uploads/img_20250905_120713_792-019d3b06-92ed-728c-9d5c-849f159f79c2-2.webp"
               alt="Owner of Cool Refrigeration"
-              loading="lazy"
-              decoding="async"
               className="relative w-52 h-52 object-cover rounded-full"
               style={{
                 border: "3px solid oklch(0.75 0.14 220)",
@@ -1116,8 +1113,6 @@ function Products() {
                   <img
                     src={p.img}
                     alt={p.name}
-                    loading="lazy"
-                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
@@ -2563,7 +2558,7 @@ function ChatSection() {
     if (!actor) return;
     setLoadingMsgs(true);
     fetchMessages().finally(() => setLoadingMsgs(false));
-    const interval = setInterval(fetchMessages, 15000);
+    const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
   }, [actor, fetchMessages]);
 
@@ -2895,8 +2890,6 @@ function Footer({ setPage }: { setPage: (p: "home" | "about") => void }) {
               <img
                 src="/assets/white_and_black_professional_design_football_club_logo_20260330_134603_0000-019d3dd5-8280-743a-9bc1-64c3380cb0d3.png"
                 alt="Cool Refrigeration Logo"
-                loading="lazy"
-                decoding="async"
                 className="h-16 w-auto object-contain"
               />
             </div>
@@ -3196,7 +3189,7 @@ function FloatingChat() {
     if (!open || !actor) return;
     setLoadingMsgs(true);
     fetchMessages().finally(() => setLoadingMsgs(false));
-    const interval = setInterval(fetchMessages, 15000);
+    const interval = setInterval(fetchMessages, 5000);
     return () => clearInterval(interval);
   }, [open, actor, fetchMessages]);
 
@@ -3436,7 +3429,7 @@ function BackToTop() {
 
   useEffect(() => {
     const handler = () => setVisible(window.scrollY > 400);
-    window.addEventListener("scroll", handler, { passive: true });
+    window.addEventListener("scroll", handler);
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
@@ -3702,8 +3695,6 @@ function AboutPage({ setPage }: { setPage: (p: "home" | "about") => void }) {
           <img
             src="/assets/uploads/screenshot_20250326_050441_contacts-019d3b03-4071-77ae-86aa-b69fd1bd50a1-1.jpg"
             alt="Owner - Cool Refrigeration"
-            loading="lazy"
-            decoding="async"
             className="w-36 h-36 rounded-full object-cover flex-shrink-0"
             style={{
               border: "3px solid oklch(0.55 0.18 230 / 0.5)",
