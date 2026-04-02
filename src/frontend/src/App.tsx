@@ -4696,10 +4696,6 @@ function AdminPanel() {
                 <div className="flex justify-end mb-3">
                   <button
                     onClick={async () => {
-                      if (
-                        !confirm("Delete ALL messages? This cannot be undone.")
-                      )
-                        return;
                       if (!actor) return;
                       await actor.clearAllChatMessages();
                       const msgs = await actor.getAllChatMessages();
