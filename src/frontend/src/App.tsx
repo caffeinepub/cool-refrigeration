@@ -810,19 +810,26 @@ function Hero() {
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(135deg, oklch(0.08 0.05 250 / 0.97) 0%, oklch(0.12 0.05 240 / 0.9) 50%, oklch(0.10 0.06 235 / 0.75) 100%)",
+            "linear-gradient(135deg, oklch(0.07 0.04 260 / 0.98) 0%, oklch(0.10 0.05 245 / 0.93) 50%, oklch(0.09 0.06 235 / 0.80) 100%)",
         }}
       />
       {/* Glow orbs */}
       <div
-        className="absolute top-1/4 left-1/3 w-96 h-96 rounded-full blur-3xl pointer-events-none animate-pulse-glow"
-        style={{ background: "oklch(0.55 0.18 230 / 0.08)" }}
+        className="absolute top-1/4 left-1/4 w-[36rem] h-[36rem] rounded-full blur-3xl pointer-events-none animate-pulse-glow"
+        style={{ background: "oklch(0.52 0.20 235 / 0.10)" }}
       />
       <div
-        className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-3xl pointer-events-none animate-pulse-glow"
+        className="absolute bottom-1/3 right-1/5 w-80 h-80 rounded-full blur-3xl pointer-events-none animate-pulse-glow"
         style={{
-          background: "oklch(0.75 0.14 220 / 0.06)",
+          background: "oklch(0.72 0.19 218 / 0.07)",
           animationDelay: "1.5s",
+        }}
+      />
+      <div
+        className="absolute top-1/2 right-1/3 w-64 h-64 rounded-full blur-3xl pointer-events-none animate-pulse-glow"
+        style={{
+          background: "oklch(0.76 0.18 50 / 0.04)",
+          animationDelay: "3s",
         }}
       />
       {/* Floating snowflakes */}
@@ -862,11 +869,11 @@ function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-xs font-bold uppercase tracking-[0.3em] mb-5 flex items-center gap-2"
-            style={{ color: "oklch(0.75 0.14 220)" }}
+            style={{ color: "oklch(0.82 0.22 210)" }}
           >
             <span
               className="w-8 h-px inline-block"
-              style={{ background: "oklch(0.75 0.14 220)" }}
+              style={{ background: "oklch(0.82 0.22 210)" }}
             />
             Trusted Refrigeration Experts In Kolkata
           </motion.p>
@@ -874,25 +881,20 @@ function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.3 }}
-            className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white leading-tight mb-6"
+            className="text-5xl sm:text-6xl lg:text-8xl font-extrabold leading-[1.0] tracking-tight mb-6"
             style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
           >
-            Keeping Your
+            <span style={{ color: "oklch(0.96 0.008 250)" }}>Keeping Your</span>
             <br />
-            Business{" "}
-            <span
-              className="glow-text"
-              style={{ color: "oklch(0.75 0.14 220)" }}
-            >
-              Ice Cold
-            </span>
+            <span style={{ color: "oklch(0.96 0.008 250)" }}>Business </span>
+            <span className="hero-gradient-text">Ice Cold</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="text-base mb-10 leading-relaxed"
-            style={{ color: "oklch(0.78 0.04 250)" }}
+            className="text-base sm:text-lg mb-10 leading-relaxed max-w-xl"
+            style={{ color: "oklch(0.75 0.04 250)" }}
           >
             Kolkata's premier AC installation, servicing &amp; fridge repair
             specialists. Trusted by restaurants, homeowners &amp; hotels — 24/7
@@ -944,18 +946,10 @@ function Hero() {
               { val: "24/7", label: "Emergency Service" },
             ].map((stat) => (
               <div key={stat.label}>
-                <p
-                  className="text-3xl font-bold glow-text"
-                  style={{
-                    color: "oklch(0.75 0.14 220)",
-                    fontFamily: "'Bricolage Grotesque', sans-serif",
-                  }}
-                >
-                  {stat.val}
-                </p>
+                <p className="stat-number">{stat.val}</p>
                 <p
                   className="text-xs uppercase tracking-widest mt-1"
-                  style={{ color: "oklch(0.6 0.04 250)" }}
+                  style={{ color: "oklch(0.58 0.04 250)" }}
                 >
                   {stat.label}
                 </p>
@@ -1011,7 +1005,7 @@ function Services() {
           >
             What We Offer
           </p>
-          <h2 className="section-title">Our Services</h2>
+          <h2 className="section-title-gradient">Our Services</h2>
           <p className="section-subtitle">
             AC installation, AC service &amp; fridge repair for homes,
             restaurants, and hotels across Kolkata.
@@ -1025,20 +1019,14 @@ function Services() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.12 }}
-              className="glass-card rounded-2xl p-8 flex flex-col items-center text-center group transition-all duration-300"
-              style={{ boxShadow: "0 4px 30px oklch(0 0 0 / 0.3)" }}
+              className="glass-card card-hover rounded-2xl p-8 flex flex-col items-center text-center group"
+              style={{}}
               data-ocid={`services.item.${i + 1}`}
             >
-              <div
-                className="w-16 h-16 rounded-full flex items-center justify-center mb-6 transition-all duration-300"
-                style={{
-                  background: "oklch(0.55 0.18 230 / 0.15)",
-                  border: "1px solid oklch(0.55 0.18 230 / 0.3)",
-                }}
-              >
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mb-6 icon-ring">
                 <s.icon
                   className="w-8 h-8"
-                  style={{ color: "oklch(0.75 0.14 220)" }}
+                  style={{ color: "oklch(0.82 0.22 210)" }}
                 />
               </div>
               <h3
@@ -1200,7 +1188,7 @@ function Products() {
           >
             What We Work With
           </p>
-          <h2 className="section-title">Product Showcase</h2>
+          <h2 className="section-title-gradient">Product Showcase</h2>
           <p className="section-subtitle">
             Industry-leading cooling equipment for every need.
           </p>
@@ -1213,8 +1201,8 @@ function Products() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="glass-card rounded-2xl overflow-hidden group transition-all duration-300"
-              style={{ boxShadow: "0 4px 30px oklch(0 0 0 / 0.3)" }}
+              className="glass-card card-hover rounded-2xl overflow-hidden group"
+              style={{}}
               data-ocid={`products.item.${i + 1}`}
             >
               {p.img && (
@@ -1355,7 +1343,7 @@ function Testimonials() {
           >
             Client Reviews
           </p>
-          <h2 className="section-title">What Our Clients Say</h2>
+          <h2 className="section-title-gradient">What Our Clients Say</h2>
           <p className="section-subtitle">
             Trusted by restaurants, home owners, and hotels across Kolkata.
           </p>
@@ -1534,7 +1522,7 @@ function CustomerReviews() {
           >
             Customer Feedback
           </p>
-          <h2 className="section-title">Customer Reviews</h2>
+          <h2 className="section-title-gradient">Customer Reviews</h2>
           <p className="section-subtitle">
             Share your experience and read what others say about our service.
           </p>
@@ -1850,7 +1838,7 @@ function OrderSection() {
           >
             Get A Service
           </p>
-          <h2 className="section-title">Place an Order</h2>
+          <h2 className="section-title-gradient">Place an Order</h2>
           <p className="section-subtitle">
             Book a service or request a product — we'll confirm your order
             within 2 hours.
@@ -2278,7 +2266,7 @@ function PaymentSection() {
           >
             Flexible &amp; Easy
           </p>
-          <h2 className="section-title">Payment Options</h2>
+          <h2 className="section-title-gradient">Payment Options</h2>
           <p className="section-subtitle">
             We make payment easy and flexible — choose what works best for you.
           </p>
@@ -2480,7 +2468,7 @@ function ContactSection() {
           >
             Reach Out
           </p>
-          <h2 className="section-title">Get In Touch</h2>
+          <h2 className="section-title-gradient">Get In Touch</h2>
           <p className="section-subtitle">
             Ready to book a service? Request a free quote or ask us anything.
           </p>
@@ -4122,7 +4110,7 @@ function AdminMessageCard({
           <button
             onClick={async () => {
               if (!actor) return;
-              await (actor as any).deleteChatMessage(BigInt(message.id));
+              await actor.deleteChatMessage(BigInt(message.id));
               onDeleted();
             }}
             className="inline-flex items-center justify-center w-6 h-6 rounded transition-colors hover:bg-red-900/20"
@@ -4280,6 +4268,28 @@ function AdminPanel() {
             >
               <RefreshCw className="w-3 h-3 mr-1" />
               Refresh
+            </Button>
+            <Button
+              data-ocid="admin.delete_all_button"
+              onClick={async () => {
+                if (!actor) return;
+                await Promise.all([
+                  actor.clearAllOrders(),
+                  actor.clearAllChatMessages(),
+                ]);
+                setOrders([]);
+                setChatMessages([]);
+              }}
+              size="sm"
+              className="text-xs uppercase tracking-wider"
+              style={{
+                background: "oklch(0.45 0.18 25)",
+                color: "white",
+                border: "none",
+              }}
+            >
+              <Trash2 className="w-3 h-3 mr-1" />
+              Delete All
             </Button>
             <Button
               onClick={() => {
@@ -4691,7 +4701,7 @@ function AdminPanel() {
                       )
                         return;
                       if (!actor) return;
-                      await (actor as any).clearAllChatMessages();
+                      await actor.clearAllChatMessages();
                       const msgs = await actor.getAllChatMessages();
                       setChatMessages(msgs as AdminChatMessage[]);
                     }}

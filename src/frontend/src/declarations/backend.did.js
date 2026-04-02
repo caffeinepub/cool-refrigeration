@@ -41,6 +41,10 @@ export const idlService = IDL.Service({
   'getAllChatMessages' : IDL.Func([], [IDL.Vec(ChatMessage)], ['query']),
   'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
   'getAllReviews' : IDL.Func([], [IDL.Vec(Review)], ['query']),
+  'deleteOrder' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+  'clearAllOrders' : IDL.Func([], [IDL.Bool], []),
+  'deleteChatMessage' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+  'clearAllChatMessages' : IDL.Func([], [IDL.Bool], []),
   'getChatMessagesBySession' : IDL.Func(
       [IDL.Text],
       [IDL.Vec(ChatMessage)],
@@ -101,6 +105,10 @@ export const idlFactory = ({ IDL }) => {
     'getAllChatMessages' : IDL.Func([], [IDL.Vec(ChatMessage)], ['query']),
     'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
     'getAllReviews' : IDL.Func([], [IDL.Vec(Review)], ['query']),
+    'deleteOrder' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    'clearAllOrders' : IDL.Func([], [IDL.Bool], []),
+    'deleteChatMessage' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    'clearAllChatMessages' : IDL.Func([], [IDL.Bool], []),
     'getChatMessagesBySession' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(ChatMessage)],

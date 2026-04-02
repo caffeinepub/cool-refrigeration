@@ -76,9 +76,10 @@ export default {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgba(0,0,0,0.05)",
-        glow: "0 0 20px oklch(0.55 0.18 230 / 0.4), 0 4px 15px oklch(0.55 0.18 230 / 0.2)",
-        "glow-lg": "0 0 40px oklch(0.55 0.18 230 / 0.5), 0 8px 30px oklch(0.55 0.18 230 / 0.3)",
-        "glow-accent": "0 0 30px oklch(0.75 0.14 220 / 0.5)",
+        glow: "0 0 25px oklch(0.52 0.20 235 / 0.45), 0 4px 15px oklch(0 0 0 / 0.3)",
+        "glow-lg": "0 0 50px oklch(0.52 0.20 235 / 0.55), 0 8px 30px oklch(0 0 0 / 0.4)",
+        "glow-accent": "0 0 35px oklch(0.82 0.16 215 / 0.5)",
+        "card-hover": "0 12px 40px oklch(0 0 0 / 0.5), 0 0 30px oklch(0.52 0.20 235 / 0.25)",
       },
       keyframes: {
         "accordion-down": {
@@ -97,12 +98,17 @@ export default {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-10px)" },
         },
+        "shimmer": {
+          "0%": { backgroundPosition: "200% center" },
+          "100%": { backgroundPosition: "-200% center" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-glow": "pulse-glow 3s ease-in-out infinite",
         float: "float 4s ease-in-out infinite",
+        shimmer: "shimmer 3s linear infinite",
       },
     },
   },

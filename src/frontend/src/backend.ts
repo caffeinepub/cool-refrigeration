@@ -128,6 +128,8 @@ export interface backendInterface {
     submitReview(name: string, stars: bigint, message: string): Promise<boolean>;
     deleteOrder(id: bigint): Promise<boolean>;
     clearAllOrders(): Promise<boolean>;
+    deleteChatMessage(id: bigint): Promise<boolean>;
+    clearAllChatMessages(): Promise<boolean>;
 }
 import type { ChatMessage as _ChatMessage, Time as _Time } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -263,6 +265,28 @@ export class Backend implements backendInterface {
             } catch(e) { return this.processError(e); }
         } else {
             const result = await this.actor.clearAllOrders();
+            return result;
+        }
+    }
+    async deleteChatMessage(id: bigint): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteChatMessage(id);
+                return result;
+            } catch(e) { return this.processError(e); }
+        } else {
+            const result = await this.actor.deleteChatMessage(id);
+            return result;
+        }
+    }
+    async clearAllChatMessages(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.clearAllChatMessages();
+                return result;
+            } catch(e) { return this.processError(e); }
+        } else {
+            const result = await this.actor.clearAllChatMessages();
             return result;
         }
     }

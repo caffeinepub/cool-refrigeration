@@ -44,6 +44,8 @@ export interface _SERVICE {
   'getAllReviews' : ActorMethod<[], Array<Review>>,
   'deleteOrder' : ActorMethod<[bigint], boolean>,
   'clearAllOrders' : ActorMethod<[], boolean>,
+  'deleteChatMessage' : ActorMethod<[bigint], boolean>,
+  'clearAllChatMessages' : ActorMethod<[], boolean>,
   'getChatMessagesBySession' : ActorMethod<[string], Array<ChatMessage>>,
   'replyToChat' : ActorMethod<[bigint, string], boolean>,
   'sendChatMessage' : ActorMethod<[string, string, string], boolean>,
