@@ -257,6 +257,95 @@ function CartProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ─── UPI Pay Buttons ───────────────────────────────────────────────────────────
+const GPAY_UPI_ID = "rebellodanton-8@oksbi";
+const PHONEPE_UPI_ID = "8100492367-5@ybl";
+
+function UpiPayButtons() {
+  const [amount, setAmount] = useState("");
+
+  const handlePay = (app: "gpay" | "phonepe") => {
+    if (!amount || Number.parseFloat(amount) < 1) {
+      toast.error("Please enter an amount");
+      return;
+    }
+    const upiId = app === "gpay" ? GPAY_UPI_ID : PHONEPE_UPI_ID;
+    const link = `upi://pay?pa=${upiId}&pn=Cool+Refrigeration&am=${amount}&cu=INR&tn=Service+Payment`;
+    window.open(link, "_blank");
+  };
+
+  return (
+    <div className="flex flex-col gap-3 w-full">
+      <Input
+        type="number"
+        min={1}
+        placeholder="Enter amount ₹"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        className="text-white text-sm"
+        style={{
+          background: "oklch(0.10 0.04 250)",
+          borderColor: "oklch(0.28 0.06 250)",
+          color: "white",
+        }}
+        data-ocid="payment.input"
+      />
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => handlePay("gpay")}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-bold uppercase tracking-wider text-white transition-all duration-200 hover:brightness-110 active:scale-95"
+          style={{
+            background: "oklch(0.45 0.18 145)",
+            boxShadow: "0 0 14px oklch(0.45 0.18 145 / 0.45)",
+          }}
+          data-ocid="payment.primary_button"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="white"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
+          </svg>
+          Google Pay
+        </button>
+        <button
+          type="button"
+          onClick={() => handlePay("phonepe")}
+          className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-bold uppercase tracking-wider text-white transition-all duration-200 hover:brightness-110 active:scale-95"
+          style={{
+            background: "oklch(0.45 0.2 280)",
+            boxShadow: "0 0 14px oklch(0.45 0.2 280 / 0.45)",
+          }}
+          data-ocid="payment.secondary_button"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="white"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6H9l3-7 3 7h-2v6z" />
+          </svg>
+          PhonePe
+        </button>
+      </div>
+      <p
+        className="text-xs text-center"
+        style={{ color: "oklch(0.5 0.04 250)" }}
+      >
+        Opens Google Pay or PhonePe app on your phone
+      </p>
+    </div>
+  );
+}
+
 // ─── Cart Drawer ───────────────────────────────────────────────────────────────
 function CartDrawer() {
   const { entries, remove, setQty, clear, cartOpen, setCartOpen } = useCart();
@@ -304,7 +393,7 @@ function CartDrawer() {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 280 }}
-            className="fixed top-0 right-0 h-full w-full max-w-md z-[70] flex flex-col"
+            className="fixed top-0 right-0 h-full w-full sm:max-w-md z-[70] flex flex-col"
             style={{
               background: "oklch(0.13 0.05 250)",
               borderLeft: "1px solid oklch(0.55 0.18 230 / 0.25)",
@@ -474,6 +563,23 @@ function CartDrawer() {
                   <MessageCircle className="w-4 h-4" />
                   Request Quote via WhatsApp
                 </Button>
+                <div className="flex items-center gap-3 my-1">
+                  <div
+                    className="flex-1 h-px"
+                    style={{ background: "oklch(0.55 0.18 230 / 0.2)" }}
+                  />
+                  <span
+                    className="text-xs font-semibold uppercase tracking-wider"
+                    style={{ color: "oklch(0.5 0.04 250)" }}
+                  >
+                    Or Pay Now
+                  </span>
+                  <div
+                    className="flex-1 h-px"
+                    style={{ background: "oklch(0.55 0.18 230 / 0.2)" }}
+                  />
+                </div>
+                <UpiPayButtons />
               </div>
             )}
           </motion.div>
@@ -656,7 +762,7 @@ function Header({ setPage }: { setPage: (p: "home" | "about") => void }) {
                 key={l.href}
                 type="button"
                 onClick={() => handleNav(l.href)}
-                className="text-sm font-semibold uppercase tracking-wider text-left py-1 transition-colors"
+                className="text-sm font-semibold uppercase tracking-wider text-left py-3 transition-colors"
                 style={{ color: "oklch(0.72 0.04 250)" }}
               >
                 {l.label}
@@ -743,7 +849,7 @@ function Hero() {
         </div>
       ))}
 
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-12 py-24 w-full flex flex-col lg:flex-row items-center justify-between gap-12">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-16 sm:py-24 w-full flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
         <motion.div
           initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
@@ -768,7 +874,7 @@ function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.3 }}
-            className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6"
+            className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white leading-tight mb-6"
             style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
           >
             Keeping Your
@@ -889,7 +995,7 @@ function Services() {
   return (
     <section
       id="services"
-      className="py-24"
+      className="py-16 sm:py-24"
       style={{ background: "oklch(0.14 0.045 252)" }}
     >
       <div className="max-w-7xl mx-auto px-6">
@@ -960,7 +1066,7 @@ function OwnerSection() {
   return (
     <section
       id="owner"
-      className="py-24"
+      className="py-16 sm:py-24"
       style={{ background: "oklch(0.12 0.04 250)" }}
     >
       <div className="max-w-5xl mx-auto px-6">
@@ -969,7 +1075,7 @@ function OwnerSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="glass-card rounded-3xl p-10 flex flex-col md:flex-row items-center gap-12"
+          className="glass-card rounded-3xl p-6 sm:p-10 flex flex-col md:flex-row items-center gap-12"
           style={{ boxShadow: "0 8px 40px oklch(0 0 0 / 0.4)" }}
         >
           <div className="flex-shrink-0 relative">
@@ -1078,7 +1184,7 @@ function Products() {
   return (
     <section
       id="products"
-      className="py-24"
+      className="py-16 sm:py-24"
       style={{ background: "oklch(0.14 0.045 252)" }}
     >
       <div className="max-w-7xl mx-auto px-6">
@@ -1233,7 +1339,7 @@ function Testimonials() {
   return (
     <section
       id="testimonials"
-      className="py-24"
+      className="py-16 sm:py-24"
       style={{ background: "oklch(0.12 0.04 250)" }}
     >
       <div className="max-w-7xl mx-auto px-6">
@@ -1412,7 +1518,7 @@ function CustomerReviews() {
   return (
     <section
       id="reviews"
-      className="py-24"
+      className="py-16 sm:py-24"
       style={{ background: "oklch(0.14 0.045 252)" }}
     >
       <div className="max-w-7xl mx-auto px-6">
@@ -1728,7 +1834,7 @@ function OrderSection() {
   return (
     <section
       id="order"
-      className="py-24"
+      className="py-16 sm:py-24"
       style={{ background: "oklch(0.14 0.045 252)" }}
     >
       <div className="max-w-7xl mx-auto px-6">
@@ -1765,7 +1871,7 @@ function OrderSection() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4 }}
-              className="glass-card rounded-2xl p-10 flex flex-col items-center gap-6 text-center"
+              className="glass-card rounded-2xl p-6 sm:p-10 flex flex-col items-center gap-6 text-center"
               style={{ boxShadow: "0 8px 50px oklch(0 0 0 / 0.5)" }}
               data-ocid="order.success_state"
             >
@@ -1845,6 +1951,31 @@ function OrderSection() {
               >
                 Place Another Order
               </Button>
+              <div className="w-full">
+                <div className="flex items-center gap-3 my-2">
+                  <div
+                    className="flex-1 h-px"
+                    style={{ background: "oklch(0.55 0.18 230 / 0.2)" }}
+                  />
+                  <span
+                    className="text-xs font-semibold uppercase tracking-wider"
+                    style={{ color: "oklch(0.75 0.14 220)" }}
+                  >
+                    Pay Now
+                  </span>
+                  <div
+                    className="flex-1 h-px"
+                    style={{ background: "oklch(0.55 0.18 230 / 0.2)" }}
+                  />
+                </div>
+                <p
+                  className="text-xs text-center mb-3"
+                  style={{ color: "oklch(0.6 0.04 250)" }}
+                >
+                  Pay your service fee instantly via UPI
+                </p>
+                <UpiPayButtons />
+              </div>
             </motion.div>
           ) : (
             <form
@@ -2079,7 +2210,7 @@ function OrderSection() {
 }
 
 // ─── Payment Section ──────────────────────────────────────────────────────────
-const UPI_ID = "8100492367-4@ybl";
+const UPI_ID = "rebellodanton-8@oksbi";
 
 const PAYMENT_METHODS = [
   {
@@ -2131,7 +2262,7 @@ function PaymentSection() {
   return (
     <section
       id="payment"
-      className="py-24"
+      className="py-16 sm:py-24"
       style={{ background: "oklch(0.12 0.04 250)" }}
     >
       <div className="max-w-7xl mx-auto px-6">
@@ -2247,6 +2378,35 @@ function PaymentSection() {
         </div>
 
         <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.25 }}
+          className="mt-12"
+        >
+          <div
+            className="max-w-sm mx-auto glass-card rounded-2xl p-8 flex flex-col items-center gap-5 text-center"
+            style={{ boxShadow: "0 4px 30px oklch(0 0 0 / 0.3)" }}
+          >
+            <div>
+              <p
+                className="text-xs font-bold uppercase tracking-[0.2em] mb-1"
+                style={{ color: "oklch(0.75 0.14 220)" }}
+              >
+                Instant UPI Payment
+              </p>
+              <h3
+                className="text-lg font-bold text-white"
+                style={{ fontFamily: "'Bricolage Grotesque', sans-serif" }}
+              >
+                Pay Now Online
+              </h3>
+            </div>
+            <UpiPayButtons />
+          </div>
+        </motion.div>
+
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -2304,7 +2464,7 @@ function ContactSection() {
   return (
     <section
       id="contact"
-      className="py-24"
+      className="py-16 sm:py-24"
       style={{ background: "oklch(0.14 0.045 252)" }}
     >
       <div className="max-w-7xl mx-auto px-6">
@@ -2325,7 +2485,7 @@ function ContactSection() {
             Ready to book a service? Request a free quote or ask us anything.
           </p>
         </motion.div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -3254,7 +3414,7 @@ function FloatingChat() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.25 }}
-            className="fixed z-50 w-80 rounded-2xl overflow-hidden shadow-2xl"
+            className="fixed z-50 w-80 max-w-[calc(100vw-2rem)] rounded-2xl overflow-hidden shadow-2xl"
             style={{
               bottom: "6.5rem",
               right: "1.5rem",
@@ -3303,7 +3463,7 @@ function FloatingChat() {
             </div>
 
             {/* Body */}
-            <div className="p-4 flex flex-col gap-3">
+            <div className="p-4 flex flex-col gap-3 max-h-[60vh] overflow-y-auto">
               {!chatName ? (
                 <form onSubmit={handleSetName} className="flex flex-col gap-3">
                   <p
@@ -3449,7 +3609,7 @@ function BackToTop() {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.7 }}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full text-white flex items-center justify-center glow-btn transition-all duration-300"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 w-12 h-12 rounded-full text-white flex items-center justify-center glow-btn transition-all duration-300"
           style={{
             background: "oklch(0.55 0.18 230)",
             boxShadow: "0 0 20px oklch(0.55 0.18 230 / 0.6)",
@@ -3530,7 +3690,7 @@ function AboutPage({ setPage }: { setPage: (p: "home" | "about") => void }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="grid md:grid-cols-2 gap-10 items-center"
+          className="grid md:grid-cols-2 gap-8 sm:gap-10 items-center"
         >
           <div>
             <h2
@@ -3961,7 +4121,6 @@ function AdminMessageCard({
           </p>
           <button
             onClick={async () => {
-              if (!confirm("Delete this message?")) return;
               if (!actor) return;
               await (actor as any).deleteChatMessage(BigInt(message.id));
               onDeleted();
@@ -4305,8 +4464,6 @@ function AdminPanel() {
                 <div className="flex justify-end mb-3">
                   <button
                     onClick={async () => {
-                      if (!confirm("Delete ALL orders? This cannot be undone."))
-                        return;
                       if (!actor) return;
                       await actor.clearAllOrders();
                       const ords = await actor.getAllOrders();
@@ -4436,8 +4593,6 @@ function AdminPanel() {
                                   </a>
                                   <button
                                     onClick={async () => {
-                                      if (!confirm("Delete this order?"))
-                                        return;
                                       if (!actor) return;
                                       await actor.deleteOrder(BigInt(o.id));
                                       setOrders((prev) =>
