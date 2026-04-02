@@ -4108,10 +4108,10 @@ function AdminMessageCard({
             {formatTs(message.timestamp)}
           </p>
           <button
-            onClick={async () => {
-              if (!actor) return;
-              await actor.deleteChatMessage(BigInt(message.id));
+            onClick={() => {
               onDeleted();
+              if (actor)
+                actor.deleteChatMessage(BigInt(message.id)).catch(() => {});
             }}
             className="inline-flex items-center justify-center w-6 h-6 rounded transition-colors hover:bg-red-900/20"
             style={{
@@ -4189,27 +4189,137 @@ function AdminMessageCard({
   );
 }
 
+const CACHE_ORDERS = "admin_orders_cache";
+const CACHE_REVIEWS = "admin_reviews_cache";
+const CACHE_MESSAGES = "admin_messages_cache";
+
+function readCache<T>(key: string): T[] {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (raw) return JSON.parse(raw) as T[];
+  } catch {}
+  return [];
+}
+
+function writeCache<T>(key: string, data: T[]) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(data));
+  } catch {}
+}
+
+function SkeletonRows({ cols }: { cols: number }) {
+  return (
+    <>
+      {[1, 2, 3].map((i) => (
+        <TableRow key={i} style={{ borderColor: "oklch(0.22 0.04 250)" }}>
+          {["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+            .slice(0, cols)
+            .map((id, j) => (
+              <TableCell key={id}>
+                <div
+                  className="h-3 rounded animate-pulse"
+                  style={{
+                    background: "oklch(0.22 0.04 250)",
+                    width: j === 0 ? "80px" : "60px",
+                  }}
+                />
+              </TableCell>
+            ))}
+        </TableRow>
+      ))}
+    </>
+  );
+}
+
+function SkeletonCards() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="p-5 flex flex-col gap-3 animate-pulse"
+          style={{
+            background: "oklch(0.17 0.04 250)",
+            border: "1px solid oklch(0.55 0.18 230 / 0.3)",
+            borderRadius: "1rem",
+          }}
+        >
+          <div
+            className="h-3 rounded w-1/2"
+            style={{ background: "oklch(0.22 0.04 250)" }}
+          />
+          <div
+            className="h-3 rounded w-full"
+            style={{ background: "oklch(0.22 0.04 250)" }}
+          />
+          <div
+            className="h-3 rounded w-3/4"
+            style={{ background: "oklch(0.22 0.04 250)" }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function AdminPanel() {
   const { actor } = useActor();
-  const [loading, setLoading] = useState(true);
-  const [orders, setOrders] = useState<AdminOrder[]>([]);
-  const [reviews, setReviews] = useState<AdminReview[]>([]);
-  const [chatMessages, setChatMessages] = useState<AdminChatMessage[]>([]);
+  const [orders, setOrders] = useState<AdminOrder[]>(() =>
+    readCache<AdminOrder>(CACHE_ORDERS),
+  );
+  const [reviews, setReviews] = useState<AdminReview[]>(() =>
+    readCache<AdminReview>(CACHE_REVIEWS),
+  );
+  const [chatMessages, setChatMessages] = useState<AdminChatMessage[]>(() =>
+    readCache<AdminChatMessage>(CACHE_MESSAGES),
+  );
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(true);
 
+  const fetchAll = (forceRefresh = false) => {
+    if (!actor) return;
+    if (forceRefresh) {
+      sessionStorage.removeItem(CACHE_ORDERS);
+      sessionStorage.removeItem(CACHE_REVIEWS);
+      sessionStorage.removeItem(CACHE_MESSAGES);
+      setLoadingOrders(true);
+      setLoadingReviews(true);
+      setLoadingMessages(true);
+    }
+    actor
+      .getAllOrders()
+      .then((ords) => {
+        const data = (ords ?? []) as AdminOrder[];
+        setOrders(data);
+        writeCache(CACHE_ORDERS, data);
+        setLoadingOrders(false);
+      })
+      .catch(() => setLoadingOrders(false));
+    actor
+      .getAllReviews()
+      .then((revs) => {
+        const data = (revs ?? []) as AdminReview[];
+        setReviews(data);
+        writeCache(CACHE_REVIEWS, data);
+        setLoadingReviews(false);
+      })
+      .catch(() => setLoadingReviews(false));
+    actor
+      .getAllChatMessages()
+      .then((msgs) => {
+        const data = (msgs ?? []) as AdminChatMessage[];
+        setChatMessages(data);
+        writeCache(CACHE_MESSAGES, data);
+        setLoadingMessages(false);
+      })
+      .catch(() => setLoadingMessages(false));
+  };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fetchAll is stable
   useEffect(() => {
     if (!actor) return;
-    setLoading(true);
-    Promise.all([
-      actor.getAllOrders(),
-      actor.getAllReviews(),
-      actor.getAllChatMessages(),
-    ])
-      .then(([ords, revs, msgs]) => {
-        if (ords) setOrders(ords as AdminOrder[]);
-        if (revs) setReviews(revs as AdminReview[]);
-        if (msgs) setChatMessages(msgs as AdminChatMessage[]);
-      })
-      .finally(() => setLoading(false));
+    fetchAll();
   }, [actor]);
 
   const bgStyle = { background: "oklch(0.12 0.04 250)", minHeight: "100vh" };
@@ -4242,21 +4352,7 @@ function AdminPanel() {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              onClick={() => {
-                if (!actor) return;
-                setLoading(true);
-                Promise.all([
-                  actor.getAllOrders(),
-                  actor.getAllReviews(),
-                  actor.getAllChatMessages(),
-                ])
-                  .then(([ords, revs, msgs]) => {
-                    if (ords) setOrders(ords as AdminOrder[]);
-                    if (revs) setReviews(revs as AdminReview[]);
-                    if (msgs) setChatMessages(msgs as AdminChatMessage[]);
-                  })
-                  .finally(() => setLoading(false));
-              }}
+              onClick={() => fetchAll(true)}
               variant="outline"
               size="sm"
               className="text-xs uppercase tracking-wider"
@@ -4271,14 +4367,17 @@ function AdminPanel() {
             </Button>
             <Button
               data-ocid="admin.delete_all_button"
-              onClick={async () => {
-                if (!actor) return;
-                await Promise.all([
-                  actor.clearAllOrders(),
-                  actor.clearAllChatMessages(),
-                ]);
+              onClick={() => {
                 setOrders([]);
                 setChatMessages([]);
+                writeCache(CACHE_ORDERS, []);
+                writeCache(CACHE_MESSAGES, []);
+                if (actor) {
+                  Promise.all([
+                    actor.clearAllOrders(),
+                    actor.clearAllChatMessages(),
+                  ]).catch(() => {});
+                }
               }}
               size="sm"
               className="text-xs uppercase tracking-wider"
@@ -4308,456 +4407,483 @@ function AdminPanel() {
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-24">
-            <p className="text-sm" style={{ color: "oklch(0.55 0.04 250)" }}>
-              Loading...
+        {/* Security Stats Card */}
+        <div
+          className="mb-6 p-4 rounded-xl flex flex-wrap items-center gap-6"
+          style={{
+            background: "oklch(0.14 0.04 250)",
+            border: "1px solid oklch(0.55 0.18 230 / 0.25)",
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ background: "oklch(0.72 0.18 142 / 0.15)" }}
+            >
+              <Shield
+                className="w-4 h-4"
+                style={{ color: "oklch(0.72 0.18 142)" }}
+              />
+            </div>
+            <div>
+              <p
+                className="text-xs font-bold uppercase tracking-wider"
+                style={{ color: "oklch(0.72 0.18 142)" }}
+              >
+                Security Status
+              </p>
+              <p className="text-xs" style={{ color: "oklch(0.65 0.04 250)" }}>
+                ACTIVE &amp; MONITORING
+              </p>
+            </div>
+          </div>
+          <div
+            className="h-8 w-px"
+            style={{ background: "oklch(0.28 0.06 250)" }}
+          />
+          <div>
+            <p
+              className="text-xs font-semibold uppercase tracking-wider mb-0.5"
+              style={{ color: "oklch(0.75 0.14 220)" }}
+            >
+              Blocked Spam Attempts
+            </p>
+            <p className="text-lg font-bold text-white">
+              {(() => {
+                let total = 0;
+                for (let i = 0; i < localStorage.length; i++) {
+                  const k = localStorage.key(i);
+                  if (k?.startsWith("rla_")) {
+                    total += Number.parseInt(localStorage.getItem(k) || "0");
+                  }
+                }
+                return total;
+              })()}
             </p>
           </div>
-        ) : (
-          <>
-            {/* Security Stats Card */}
-            <div
-              className="mb-6 p-4 rounded-xl flex flex-wrap items-center gap-6"
-              style={{
-                background: "oklch(0.14 0.04 250)",
-                border: "1px solid oklch(0.55 0.18 230 / 0.25)",
-              }}
+          <div
+            className="h-8 w-px"
+            style={{ background: "oklch(0.28 0.06 250)" }}
+          />
+          <div>
+            <p
+              className="text-xs font-semibold uppercase tracking-wider mb-0.5"
+              style={{ color: "oklch(0.75 0.14 220)" }}
             >
-              <div className="flex items-center gap-2">
+              Total Orders
+            </p>
+            <p className="text-lg font-bold text-white">{orders.length}</p>
+          </div>
+          <div
+            className="h-8 w-px"
+            style={{ background: "oklch(0.28 0.06 250)" }}
+          />
+          <div>
+            <p
+              className="text-xs font-semibold uppercase tracking-wider mb-0.5"
+              style={{ color: "oklch(0.75 0.14 220)" }}
+            >
+              Total Reviews
+            </p>
+            <p className="text-lg font-bold text-white">{reviews.length}</p>
+          </div>
+          <div
+            className="h-8 w-px"
+            style={{ background: "oklch(0.28 0.06 250)" }}
+          />
+          <div>
+            <p
+              className="text-xs font-semibold uppercase tracking-wider mb-0.5"
+              style={{ color: "oklch(0.75 0.14 220)" }}
+            >
+              Total Messages
+            </p>
+            <p className="text-lg font-bold text-white">
+              {chatMessages.length}
+            </p>
+          </div>
+          <div
+            className="h-8 w-px hidden sm:block"
+            style={{ background: "oklch(0.28 0.06 250)" }}
+          />
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: "SSL Encrypted", color: "oklch(0.75 0.14 220)" },
+              { label: "Spam Protected", color: "oklch(0.72 0.18 142)" },
+              { label: "CSP Active", color: "oklch(0.70 0.14 260)" },
+              { label: "Rate Limited", color: "oklch(0.72 0.18 50)" },
+            ].map(({ label, color }) => (
+              <span
+                key={label}
+                className="text-xs px-2 py-0.5 rounded-full border font-semibold"
+                style={{
+                  borderColor: `${color} / 0.4`,
+                  color: color,
+                  background: color.replace(")", " / 0.08)"),
+                }}
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <Tabs defaultValue="orders">
+          <TabsList
+            style={{
+              background: "oklch(0.17 0.04 250)",
+              border: "1px solid oklch(0.55 0.18 230 / 0.2)",
+            }}
+            className="mb-6"
+          >
+            <TabsTrigger
+              value="orders"
+              className="text-xs uppercase tracking-wider data-[state=active]:text-white"
+            >
+              Orders ({orders.length})
+            </TabsTrigger>
+            <TabsTrigger
+              value="reviews"
+              className="text-xs uppercase tracking-wider data-[state=active]:text-white"
+            >
+              Reviews ({reviews.length})
+            </TabsTrigger>
+            <TabsTrigger
+              value="messages"
+              className="text-xs uppercase tracking-wider data-[state=active]:text-white"
+              data-ocid="admin.tab"
+            >
+              Messages ({chatMessages.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="orders">
+            <div className="flex justify-end mb-3">
+              <button
+                onClick={() => {
+                  setOrders([]);
+                  writeCache(CACHE_ORDERS, []);
+                  if (actor) actor.clearAllOrders().catch(() => {});
+                }}
+                className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs border transition-colors hover:bg-red-900/20"
+                style={{
+                  borderColor: "oklch(0.55 0.2 25 / 0.6)",
+                  color: "oklch(0.7 0.2 25)",
+                }}
+                type="button"
+                data-ocid="admin.orders.delete_button"
+              >
+                🗑 Clear All Orders
+              </button>
+            </div>
+            <div style={cardStyle} className="overflow-hidden">
+              {loadingOrders ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow style={{ borderColor: "oklch(0.28 0.06 250)" }}>
+                        {[
+                          "Date/Time",
+                          "Name",
+                          "Phone",
+                          "Email",
+                          "Service",
+                          "Product",
+                          "Address",
+                          "Preferred Date",
+                          "Notes",
+                          "Actions",
+                        ].map((h) => (
+                          <TableHead
+                            key={h}
+                            className="text-xs uppercase tracking-wider"
+                            style={{
+                              color: "oklch(0.75 0.14 220)",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <SkeletonRows cols={10} />
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : orders.length === 0 ? (
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ background: "oklch(0.72 0.18 142 / 0.15)" }}
+                  className="flex flex-col items-center justify-center py-16"
+                  data-ocid="admin.orders.empty_state"
                 >
-                  <Shield
-                    className="w-4 h-4"
-                    style={{ color: "oklch(0.72 0.18 142)" }}
-                  />
-                </div>
-                <div>
                   <p
-                    className="text-xs font-bold uppercase tracking-wider"
-                    style={{ color: "oklch(0.72 0.18 142)" }}
+                    className="text-sm"
+                    style={{ color: "oklch(0.55 0.04 250)" }}
                   >
-                    Security Status
-                  </p>
-                  <p
-                    className="text-xs"
-                    style={{ color: "oklch(0.65 0.04 250)" }}
-                  >
-                    ACTIVE &amp; MONITORING
+                    No orders yet
                   </p>
                 </div>
-              </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow style={{ borderColor: "oklch(0.28 0.06 250)" }}>
+                        {[
+                          "Date/Time",
+                          "Name",
+                          "Phone",
+                          "Email",
+                          "Service",
+                          "Product",
+                          "Address",
+                          "Preferred Date",
+                          "Notes",
+                          "Actions",
+                        ].map((h) => (
+                          <TableHead
+                            key={h}
+                            className="text-xs uppercase tracking-wider"
+                            style={{
+                              color: "oklch(0.75 0.14 220)",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {h}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {orders.map((o) => (
+                        <TableRow
+                          key={String(o.id)}
+                          style={{
+                            borderColor: "oklch(0.22 0.04 250)",
+                            borderLeft:
+                              Date.now() - Number(o.timestamp / 1_000_000n) <
+                              86_400_000
+                                ? "3px solid oklch(0.75 0.14 220)"
+                                : "3px solid transparent",
+                          }}
+                        >
+                          <TableCell className="text-xs text-white whitespace-nowrap">
+                            {formatTs(o.timestamp)}
+                          </TableCell>
+                          <TableCell className="text-xs text-white">
+                            {o.name}
+                          </TableCell>
+                          <TableCell className="text-xs text-white whitespace-nowrap">
+                            {o.phone}
+                          </TableCell>
+                          <TableCell className="text-xs text-white">
+                            {o.email || "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-white whitespace-nowrap">
+                            {o.service_type}
+                          </TableCell>
+                          <TableCell className="text-xs text-white whitespace-nowrap">
+                            {o.product_interest || "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-white">
+                            {o.address}
+                          </TableCell>
+                          <TableCell className="text-xs text-white whitespace-nowrap">
+                            {o.preferred_date || "—"}
+                          </TableCell>
+                          <TableCell className="text-xs text-white">
+                            {o.notes || "—"}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="flex items-center gap-1">
+                              <a
+                                href={`tel:${o.phone}`}
+                                className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs border transition-colors"
+                                style={{
+                                  borderColor: "oklch(0.55 0.18 230 / 0.5)",
+                                  color: "oklch(0.75 0.14 220)",
+                                }}
+                                data-ocid="admin.order.call_button"
+                              >
+                                <Phone className="w-3 h-3" />
+                                Call
+                              </a>
+                              <a
+                                href={`https://wa.me/91${o.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hi ${o.name}, your Cool Refrigeration ${o.service_type} service request has been received. We will contact you shortly.`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs border transition-colors"
+                                style={{
+                                  borderColor: "oklch(0.6 0.18 145 / 0.5)",
+                                  color: "oklch(0.75 0.18 145)",
+                                }}
+                                data-ocid="admin.order.whatsapp_button"
+                              >
+                                <MessageCircle className="w-3 h-3" />
+                                WhatsApp
+                              </a>
+                              <button
+                                onClick={() => {
+                                  setOrders((prev) =>
+                                    prev.filter((x) => x.id !== o.id),
+                                  );
+                                  if (actor)
+                                    actor
+                                      .deleteOrder(BigInt(o.id))
+                                      .catch(() => {});
+                                }}
+                                className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs border transition-colors hover:bg-red-900/20"
+                                style={{
+                                  borderColor: "oklch(0.55 0.2 25 / 0.5)",
+                                  color: "oklch(0.7 0.2 25)",
+                                }}
+                                type="button"
+                                data-ocid="admin.order.delete_button"
+                              >
+                                🗑 Delete
+                              </button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="reviews">
+            {loadingReviews ? (
+              <SkeletonCards />
+            ) : reviews.length === 0 ? (
               <div
-                className="h-8 w-px"
-                style={{ background: "oklch(0.28 0.06 250)" }}
-              />
-              <div>
+                style={cardStyle}
+                className="flex flex-col items-center justify-center py-16"
+              >
                 <p
-                  className="text-xs font-semibold uppercase tracking-wider mb-0.5"
-                  style={{ color: "oklch(0.75 0.14 220)" }}
+                  className="text-sm"
+                  style={{ color: "oklch(0.55 0.04 250)" }}
                 >
-                  Blocked Spam Attempts
-                </p>
-                <p className="text-lg font-bold text-white">
-                  {(() => {
-                    let total = 0;
-                    for (let i = 0; i < localStorage.length; i++) {
-                      const k = localStorage.key(i);
-                      if (k?.startsWith("rla_")) {
-                        total += Number.parseInt(
-                          localStorage.getItem(k) || "0",
-                        );
-                      }
-                    }
-                    return total;
-                  })()}
+                  No reviews yet
                 </p>
               </div>
-              <div
-                className="h-8 w-px"
-                style={{ background: "oklch(0.28 0.06 250)" }}
-              />
-              <div>
-                <p
-                  className="text-xs font-semibold uppercase tracking-wider mb-0.5"
-                  style={{ color: "oklch(0.75 0.14 220)" }}
-                >
-                  Total Orders
-                </p>
-                <p className="text-lg font-bold text-white">{orders.length}</p>
-              </div>
-              <div
-                className="h-8 w-px"
-                style={{ background: "oklch(0.28 0.06 250)" }}
-              />
-              <div>
-                <p
-                  className="text-xs font-semibold uppercase tracking-wider mb-0.5"
-                  style={{ color: "oklch(0.75 0.14 220)" }}
-                >
-                  Total Reviews
-                </p>
-                <p className="text-lg font-bold text-white">{reviews.length}</p>
-              </div>
-              <div
-                className="h-8 w-px"
-                style={{ background: "oklch(0.28 0.06 250)" }}
-              />
-              <div>
-                <p
-                  className="text-xs font-semibold uppercase tracking-wider mb-0.5"
-                  style={{ color: "oklch(0.75 0.14 220)" }}
-                >
-                  Total Messages
-                </p>
-                <p className="text-lg font-bold text-white">
-                  {chatMessages.length}
-                </p>
-              </div>
-              <div
-                className="h-8 w-px hidden sm:block"
-                style={{ background: "oklch(0.28 0.06 250)" }}
-              />
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { label: "SSL Encrypted", color: "oklch(0.75 0.14 220)" },
-                  { label: "Spam Protected", color: "oklch(0.72 0.18 142)" },
-                  { label: "CSP Active", color: "oklch(0.70 0.14 260)" },
-                  { label: "Rate Limited", color: "oklch(0.72 0.18 50)" },
-                ].map(({ label, color }) => (
-                  <span
-                    key={label}
-                    className="text-xs px-2 py-0.5 rounded-full border font-semibold"
-                    style={{
-                      borderColor: `${color} / 0.4`,
-                      color: color,
-                      background: color.replace(")", " / 0.08)"),
-                    }}
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {reviews.map((r) => (
+                  <div
+                    key={String(r.id)}
+                    style={cardStyle}
+                    className="p-5 flex flex-col gap-3"
                   >
-                    {label}
-                  </span>
+                    <div className="flex items-start justify-between">
+                      <p className="font-semibold text-sm text-white">
+                        {r.name}
+                      </p>
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className="w-3.5 h-3.5"
+                            style={{
+                              color:
+                                s <= Number(r.stars)
+                                  ? "oklch(0.85 0.15 90)"
+                                  : "oklch(0.35 0.04 250)",
+                              fill:
+                                s <= Number(r.stars)
+                                  ? "oklch(0.85 0.15 90)"
+                                  : "transparent",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <p
+                      className="text-xs"
+                      style={{ color: "oklch(0.72 0.04 250)" }}
+                    >
+                      {r.message}
+                    </p>
+                    <p
+                      className="text-xs"
+                      style={{ color: "oklch(0.45 0.04 250)" }}
+                    >
+                      {formatTs(r.timestamp)}
+                    </p>
+                  </div>
                 ))}
               </div>
-            </div>
-            <Tabs defaultValue="orders">
-              <TabsList
-                style={{
-                  background: "oklch(0.17 0.04 250)",
-                  border: "1px solid oklch(0.55 0.18 230 / 0.2)",
+            )}
+          </TabsContent>
+
+          <TabsContent value="messages">
+            <div className="flex justify-end mb-3">
+              <button
+                onClick={() => {
+                  setChatMessages([]);
+                  writeCache(CACHE_MESSAGES, []);
+                  if (actor) actor.clearAllChatMessages().catch(() => {});
                 }}
-                className="mb-6"
+                className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs border transition-colors hover:bg-red-900/20"
+                style={{
+                  borderColor: "oklch(0.55 0.2 25 / 0.6)",
+                  color: "oklch(0.7 0.2 25)",
+                }}
+                type="button"
+                data-ocid="admin.messages.delete_button"
               >
-                <TabsTrigger
-                  value="orders"
-                  className="text-xs uppercase tracking-wider data-[state=active]:text-white"
+                <Trash2 className="w-3.5 h-3.5" /> Clear All Messages
+              </button>
+            </div>
+            {loadingMessages ? (
+              <SkeletonCards />
+            ) : chatMessages.length === 0 ? (
+              <div
+                style={cardStyle}
+                className="flex flex-col items-center justify-center py-16"
+                data-ocid="admin.messages.empty_state"
+              >
+                <MessageCircle
+                  className="w-8 h-8 mb-3"
+                  style={{ color: "oklch(0.45 0.04 250)" }}
+                />
+                <p
+                  className="text-sm"
+                  style={{ color: "oklch(0.55 0.04 250)" }}
                 >
-                  Orders ({orders.length})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="reviews"
-                  className="text-xs uppercase tracking-wider data-[state=active]:text-white"
-                >
-                  Reviews ({reviews.length})
-                </TabsTrigger>
-                <TabsTrigger
-                  value="messages"
-                  className="text-xs uppercase tracking-wider data-[state=active]:text-white"
-                  data-ocid="admin.tab"
-                >
-                  Messages ({chatMessages.length})
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="orders">
-                <div className="flex justify-end mb-3">
-                  <button
-                    onClick={async () => {
-                      if (!actor) return;
-                      await actor.clearAllOrders();
-                      const ords = await actor.getAllOrders();
-                      setOrders(ords as AdminOrder[]);
+                  No messages yet
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {chatMessages.map((m) => (
+                  <AdminMessageCard
+                    key={String(m.id)}
+                    message={m}
+                    cardStyle={cardStyle}
+                    onReplied={() => {
+                      if (actor) {
+                        actor.getAllChatMessages().then((msgs) => {
+                          if (msgs) {
+                            const data = msgs as AdminChatMessage[];
+                            setChatMessages(data);
+                            writeCache(CACHE_MESSAGES, data);
+                          }
+                        });
+                      }
                     }}
-                    className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs border transition-colors hover:bg-red-900/20"
-                    style={{
-                      borderColor: "oklch(0.55 0.2 25 / 0.6)",
-                      color: "oklch(0.7 0.2 25)",
+                    onDeleted={() => {
+                      setChatMessages((prev) =>
+                        prev.filter((x) => x.id !== m.id),
+                      );
                     }}
-                    type="button"
-                    data-ocid="admin.orders.delete_button"
-                  >
-                    🗑 Clear All Orders
-                  </button>
-                </div>
-                <div style={cardStyle} className="overflow-hidden">
-                  {orders.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16">
-                      <p
-                        className="text-sm"
-                        style={{ color: "oklch(0.55 0.04 250)" }}
-                      >
-                        No orders yet
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow
-                            style={{ borderColor: "oklch(0.28 0.06 250)" }}
-                          >
-                            {[
-                              "Date/Time",
-                              "Name",
-                              "Phone",
-                              "Email",
-                              "Service",
-                              "Product",
-                              "Address",
-                              "Preferred Date",
-                              "Notes",
-                              "Actions",
-                            ].map((h) => (
-                              <TableHead
-                                key={h}
-                                className="text-xs uppercase tracking-wider"
-                                style={{
-                                  color: "oklch(0.75 0.14 220)",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                {h}
-                              </TableHead>
-                            ))}
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {orders.map((o) => (
-                            <TableRow
-                              key={String(o.id)}
-                              style={{
-                                borderColor: "oklch(0.22 0.04 250)",
-                                borderLeft:
-                                  Date.now() -
-                                    Number(o.timestamp / 1_000_000n) <
-                                  86_400_000
-                                    ? "3px solid oklch(0.75 0.14 220)"
-                                    : "3px solid transparent",
-                              }}
-                            >
-                              <TableCell className="text-xs text-white whitespace-nowrap">
-                                {formatTs(o.timestamp)}
-                              </TableCell>
-                              <TableCell className="text-xs text-white">
-                                {o.name}
-                              </TableCell>
-                              <TableCell className="text-xs text-white whitespace-nowrap">
-                                {o.phone}
-                              </TableCell>
-                              <TableCell className="text-xs text-white">
-                                {o.email || "—"}
-                              </TableCell>
-                              <TableCell className="text-xs text-white whitespace-nowrap">
-                                {o.service_type}
-                              </TableCell>
-                              <TableCell className="text-xs text-white whitespace-nowrap">
-                                {o.product_interest || "—"}
-                              </TableCell>
-                              <TableCell className="text-xs text-white">
-                                {o.address}
-                              </TableCell>
-                              <TableCell className="text-xs text-white whitespace-nowrap">
-                                {o.preferred_date || "—"}
-                              </TableCell>
-                              <TableCell className="text-xs text-white">
-                                {o.notes || "—"}
-                              </TableCell>
-                              <TableCell className="whitespace-nowrap">
-                                <div className="flex items-center gap-1">
-                                  <a
-                                    href={`tel:${o.phone}`}
-                                    className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs border transition-colors"
-                                    style={{
-                                      borderColor: "oklch(0.55 0.18 230 / 0.5)",
-                                      color: "oklch(0.75 0.14 220)",
-                                    }}
-                                    data-ocid="admin.order.call_button"
-                                  >
-                                    <Phone className="w-3 h-3" />
-                                    Call
-                                  </a>
-                                  <a
-                                    href={`https://wa.me/91${o.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hi ${o.name}, your Cool Refrigeration ${o.service_type} service request has been received. We will contact you shortly.`)}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs border transition-colors"
-                                    style={{
-                                      borderColor: "oklch(0.6 0.18 145 / 0.5)",
-                                      color: "oklch(0.75 0.18 145)",
-                                    }}
-                                    data-ocid="admin.order.whatsapp_button"
-                                  >
-                                    <MessageCircle className="w-3 h-3" />
-                                    WhatsApp
-                                  </a>
-                                  <button
-                                    onClick={async () => {
-                                      if (!actor) return;
-                                      await actor.deleteOrder(BigInt(o.id));
-                                      setOrders((prev) =>
-                                        prev.filter((x) => x.id !== o.id),
-                                      );
-                                    }}
-                                    className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs border transition-colors hover:bg-red-900/20"
-                                    style={{
-                                      borderColor: "oklch(0.55 0.2 25 / 0.5)",
-                                      color: "oklch(0.7 0.2 25)",
-                                    }}
-                                    type="button"
-                                    data-ocid="admin.order.delete_button"
-                                  >
-                                    🗑 Delete
-                                  </button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="reviews">
-                {reviews.length === 0 ? (
-                  <div
-                    style={cardStyle}
-                    className="flex flex-col items-center justify-center py-16"
-                  >
-                    <p
-                      className="text-sm"
-                      style={{ color: "oklch(0.55 0.04 250)" }}
-                    >
-                      No reviews yet
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {reviews.map((r) => (
-                      <div
-                        key={String(r.id)}
-                        style={cardStyle}
-                        className="p-5 flex flex-col gap-3"
-                      >
-                        <div className="flex items-start justify-between">
-                          <p className="font-semibold text-sm text-white">
-                            {r.name}
-                          </p>
-                          <div className="flex gap-0.5">
-                            {[1, 2, 3, 4, 5].map((s) => (
-                              <Star
-                                key={s}
-                                className="w-3.5 h-3.5"
-                                style={{
-                                  color:
-                                    s <= Number(r.stars)
-                                      ? "oklch(0.85 0.15 90)"
-                                      : "oklch(0.35 0.04 250)",
-                                  fill:
-                                    s <= Number(r.stars)
-                                      ? "oklch(0.85 0.15 90)"
-                                      : "transparent",
-                                }}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <p
-                          className="text-xs"
-                          style={{ color: "oklch(0.72 0.04 250)" }}
-                        >
-                          {r.message}
-                        </p>
-                        <p
-                          className="text-xs"
-                          style={{ color: "oklch(0.45 0.04 250)" }}
-                        >
-                          {formatTs(r.timestamp)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="messages">
-                <div className="flex justify-end mb-3">
-                  <button
-                    onClick={async () => {
-                      if (!actor) return;
-                      await actor.clearAllChatMessages();
-                      const msgs = await actor.getAllChatMessages();
-                      setChatMessages(msgs as AdminChatMessage[]);
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs border transition-colors hover:bg-red-900/20"
-                    style={{
-                      borderColor: "oklch(0.55 0.2 25 / 0.6)",
-                      color: "oklch(0.7 0.2 25)",
-                    }}
-                    type="button"
-                    data-ocid="admin.messages.delete_button"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> Clear All Messages
-                  </button>
-                </div>
-                {chatMessages.length === 0 ? (
-                  <div
-                    style={cardStyle}
-                    className="flex flex-col items-center justify-center py-16"
-                    data-ocid="admin.messages.empty_state"
-                  >
-                    <MessageCircle
-                      className="w-8 h-8 mb-3"
-                      style={{ color: "oklch(0.45 0.04 250)" }}
-                    />
-                    <p
-                      className="text-sm"
-                      style={{ color: "oklch(0.55 0.04 250)" }}
-                    >
-                      No messages yet
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {chatMessages.map((m) => (
-                      <AdminMessageCard
-                        key={String(m.id)}
-                        message={m}
-                        cardStyle={cardStyle}
-                        onReplied={() => {
-                          if (!actor) return;
-                          actor.getAllChatMessages().then((msgs) => {
-                            if (msgs)
-                              setChatMessages(msgs as AdminChatMessage[]);
-                          });
-                        }}
-                        onDeleted={() => {
-                          if (!actor) return;
-                          actor.getAllChatMessages().then((msgs) => {
-                            if (msgs)
-                              setChatMessages(msgs as AdminChatMessage[]);
-                          });
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </>
-        )}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
